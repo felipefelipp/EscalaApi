@@ -1,0 +1,28 @@
+# Arquivos de configuração sensíveis
+appsettings.Development.json
+
+# Pastas geradas pelo .NET durante a build
+bin/
+obj/
+
+# Arquivos temporários do Visual Studio
+*.user
+*.suo
+*.vs
+*.sln.DotSettings.user
+
+# Arquivos de log ou temporários
+*.log
+
+# Backup do sistema operacional/macOS
+.DS_Store
+
+# Arquivos relacionados ao Git
+!.gitignore
+
+# Pasta que parece conter arquivos de banco de dados
+database/
+
+# Outros arquivos gerados que não precisam ser versionados
+*.cache
+*.tmp
