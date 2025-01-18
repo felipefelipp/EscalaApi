@@ -22,9 +22,9 @@ public class EscalaController : ControllerBase
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GerenciarEscala(EscalaIntegrantes escala)
+    public async Task<IActionResult> CriarEscala(EscalaIntegrantes escala)
     {
-        var retorno = await _escalaManagerService.GerenciarEscala(escala);
+        var retorno = await _escalaManagerService.CriarEscala(escala);
 
         if (!retorno.Sucess)
         {
@@ -34,6 +34,24 @@ public class EscalaController : ControllerBase
             return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
         }
 
-        return Ok(retorno.Object);
+        return Created();
+    }
+    
+    [HttpGet("/Escalas")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ObterEscalas()
+    {
+        var retorno = await _escalaManagerService.ObterEscalas();
+        
+        if (!retorno.Sucess)
+        {
+            if (retorno.StatusCode == HttpStatusCode.NotFound)
+                return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+
+            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        }
+        
+        return Ok(retorno);
     }
 }

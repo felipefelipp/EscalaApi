@@ -3,7 +3,6 @@ using EscalaApi.Data.Repositories.Interfaces;
 using EscalaApi.Services.Interfaces;
 using EscalaApi.Services.Results;
 using EscalaApi.Utils.Enums;
-using EscalaApi.Utils.Services;
 using Flunt.Notifications;
 
 namespace EscalaApi.Services;
@@ -11,19 +10,21 @@ namespace EscalaApi.Services;
 public class EscalaManager : IEscalaManagerService
 {
     public IIntegranteRepository _integranteRepository;
+    public IEscalaRepository _escalaRepository;
 
-    public EscalaManager(IIntegranteRepository integranteRepository)
+    public EscalaManager(IIntegranteRepository integranteRepository, IEscalaRepository escalaRepository)
     {
         _integranteRepository = integranteRepository;
+        _escalaRepository = escalaRepository;
     }
 
-    public async Task<Result<List<Data.Entities.Escala>>> GerenciarEscala(EscalaIntegrantes escala)
+    public async Task<Result> CriarEscala(EscalaIntegrantes escala)
     {
         if (escala == null)
-            return Result<List<Data.Entities.Escala>>.BadRequest(new List<Notification>
+            return Result.BadRequest(new List<Notification>
                 { new Notification("Escala", "Escala não encontrada.") });
 
-        var escalaMinistros = new List<Data.Entities.Escala>();
+        var escalaIntegrantes = new List<Data.Entities.Escala>();
         var erros = new List<Notification>();
 
         foreach (var dia in escala.DiasDaEscala)
@@ -41,9 +42,9 @@ public class EscalaManager : IEscalaManagerService
                             break;
                         }
 
-                        var escalaMinistro = GerarEscala(ministros, escalaDia);
+                        var escalaMinistro = GerarEscala(ministros, escalaDia, TipoEscala.Ministro);
 
-                        escalaMinistros.AddRange(escalaMinistro);
+                        escalaIntegrantes.AddRange(escalaMinistro);
                         break;
 
                     case TipoIntegrante.BackingVocal:
@@ -54,9 +55,9 @@ public class EscalaManager : IEscalaManagerService
                             break;
                         }
 
-                        var escalaBackingVocal = GerarEscala(backingVocals, escalaDia);
+                        var escalaBackingVocal = GerarEscala(backingVocals, escalaDia, TipoEscala.BackingVocal);
 
-                        escalaMinistros.AddRange(escalaBackingVocal);
+                        escalaIntegrantes.AddRange(escalaBackingVocal);
                         break;
 
                     case TipoIntegrante.Instrumentista:
@@ -67,9 +68,9 @@ public class EscalaManager : IEscalaManagerService
                             break;
                         }
 
-                        var escalaInstrumentista = GerarEscala(instrumentistas, escalaDia);
+                        var escalaInstrumentista = GerarEscala(instrumentistas, escalaDia, TipoEscala.Instrumentista);
 
-                        escalaMinistros.AddRange(escalaInstrumentista);
+                        escalaIntegrantes.AddRange(escalaInstrumentista);
                         break;
 
                     default:
@@ -82,38 +83,45 @@ public class EscalaManager : IEscalaManagerService
                 var ministros = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Ministro);
                 if (ministros == null || !ministros.Any())
                 {
-                    var escalaMinistro = GerarEscala(ministros, escalaDia);
+                    var escalaMinistro = GerarEscala(ministros, escalaDia, TipoEscala.Ministro);
 
-                    escalaMinistros.AddRange(escalaMinistro);
+                    escalaIntegrantes.AddRange(escalaMinistro);
                 }
 
                 var backingVocals =
                     await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.BackingVocal);
                 if (backingVocals == null || !backingVocals.Any())
                 {
-                    var escalaBackingVocal = GerarEscala(backingVocals, escalaDia);
+                    var escalaBackingVocal = GerarEscala(backingVocals, escalaDia, TipoEscala.BackingVocal);
 
-                    escalaMinistros.AddRange(escalaBackingVocal);
+                    escalaIntegrantes.AddRange(escalaBackingVocal);
                 }
 
                 var instrumentistas =
                     await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Instrumentista);
                 if (instrumentistas == null || !instrumentistas.Any())
                 {
-                    var escalaInstrumentista = GerarEscala(instrumentistas, escalaDia);
+                    var escalaInstrumentista = GerarEscala(instrumentistas, escalaDia, TipoEscala.Instrumentista);
 
-                    escalaMinistros.AddRange(escalaInstrumentista);
+                    escalaIntegrantes.AddRange(escalaInstrumentista);
                 }
             }
         }
 
         if (erros.Any())
-            return Result<List<Data.Entities.Escala>>.BadRequest(erros);
+            return Result.BadRequest(erros);
 
-        return Result<List<Data.Entities.Escala>>.Ok(escalaMinistros);
+        await _escalaRepository.InserirEscala(escalaIntegrantes);
+
+        return Result.Ok();
     }
 
-
+    public async Task<Result<List<Data.Entities.Escala>>> ObterEscalas()
+    {
+        var escalas = await _escalaRepository.ObterEscalas();
+        
+        return Result<List<Data.Entities.Escala>>.Ok(escalas);
+    }
     // public void ObterEscalaMinistros(EscalaIntegrantes escalaIntegrantes)
     // {
     //     var ministros = escalaIntegrantes.Integrantes.Where(i => i.TipoIntegrante == TipoIntegrante.Ministro).ToList();
@@ -295,7 +303,9 @@ public class EscalaManager : IEscalaManagerService
     //
     // #endregion
 
-    private static List<Data.Entities.Escala> GerarEscala(List<Integrante> integrantes, List<DiaSemana> diasEscala)
+    private static List<Data.Entities.Escala> GerarEscala(List<Integrante> integrantes,
+        List<DiaSemana> diasEscala,
+        TipoEscala tipoEscala)
     {
         var escala = new List<Data.Entities.Escala>();
         Integrante? primeiroEscolhido = null;
@@ -334,7 +344,8 @@ public class EscalaManager : IEscalaManagerService
             escala.Add(new Data.Entities.Escala(
                 integranteEscolhido,
                 dia.Data,
-                dia.DayOfWeek));
+                dia.DayOfWeek,
+                tipoEscala));
         }
 
         return escala;

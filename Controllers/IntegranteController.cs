@@ -2,7 +2,6 @@ using System.Net;
 using EscalaApi.Services.Interfaces;
 using EscalaApi.Services.Models;
 using EscalaApi.Utils.Enums;
-using EscalaApi.Utils.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EscalaApi.Controllers;

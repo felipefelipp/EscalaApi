@@ -7,4 +7,7 @@ public record Integrante(
     string Nome,
     List<DayOfWeek> DiasDisponiveis,
     List<TipoIntegrante> TipoIntegrante
-);
+)
+{
+    public Integrante(int idIntegrante) : this(idIntegrante, null, null, null) { }
+};

@@ -16,6 +16,8 @@ public static class ServiceRegistration
         
         //Escala
         services.AddScoped<IEscalaManagerService, EscalaManager>();
+        services.AddScoped<IEscalaRepository, EscalaRepository>();
+
         
         return services;
     }
