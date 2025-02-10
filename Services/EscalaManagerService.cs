@@ -1,5 +1,6 @@
+using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
-using EscalaApi.Data.Repositories.Interfaces;
+using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Services.Interfaces;
 using EscalaApi.Services.Results;
 using EscalaApi.Utils.Enums;
@@ -20,10 +21,6 @@ public class EscalaManager : IEscalaManagerService
 
     public async Task<Result> CriarEscala(EscalaIntegrantes escala)
     {
-        if (escala == null)
-            return Result.BadRequest(new List<Notification>
-                { new Notification("Escala", "Escala não encontrada.") });
-
         var escalaIntegrantes = new List<Data.Entities.Escala>();
         var erros = new List<Notification>();
 
@@ -111,7 +108,15 @@ public class EscalaManager : IEscalaManagerService
         if (erros.Any())
             return Result.BadRequest(erros);
 
-        await _escalaRepository.InserirEscala(escalaIntegrantes);
+        var escalaDto = new List<EscalaDto>();
+        foreach (var escalaIntegrante in escalaIntegrantes)
+        {
+            escalaDto.Add(new EscalaDto(escalaIntegrante.Integrante.IdIntegrante,
+                escalaIntegrante.Data,
+                (int)escalaIntegrante.TipoEscala));
+        }
+
+        await _escalaRepository.InserirEscala(escalaDto);
 
         return Result.Ok();
     }
@@ -119,7 +124,7 @@ public class EscalaManager : IEscalaManagerService
     public async Task<Result<List<Data.Entities.Escala>>> ObterEscalas()
     {
         var escalas = await _escalaRepository.ObterEscalas();
-        
+
         return Result<List<Data.Entities.Escala>>.Ok(escalas);
     }
     // public void ObterEscalaMinistros(EscalaIntegrantes escalaIntegrantes)

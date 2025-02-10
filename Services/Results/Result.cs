@@ -98,3 +98,32 @@ public class Result<T> : Notifiable<Notification> where T : class
         return new Result<T>(notifications, HttpStatusCode.InternalServerError);
     }
 }
+
+public class Result<(T, T)> : Notifiable<Notification> where T : class
+{
+    public bool Sucess
+    {
+        get { return !Notifications.Any(); }
+    }
+
+    public (T,T)? Object { get; }
+    public HttpStatusCode StatusCode { get; private set; }
+
+    private Result(T obj, HttpStatusCode statusCode)
+    {
+        Object = obj;
+        StatusCode = statusCode;
+    }
+
+    private Result(IReadOnlyCollection<Notification> notifications, HttpStatusCode statusCode)
+    {
+        Object = null;
+        StatusCode = statusCode;
+        AddNotifications(notifications);
+    }
+
+    public static Result<T> Ok(T obj)
+    {
+        return new Result<T>(obj, HttpStatusCode.OK);
+    }
+}

@@ -13,7 +13,7 @@ public static class IntegranteScripts
              INNER JOIN Tipo_integrante
                  ON Integrantes.id_integrante = Tipo_integrante.id_integrante 
              WHERE Integrantes.id_integrante = @IdIntegrante";
-    
+
     public const string ObterIntegrantePorTipoScript = @"
              SELECT 
                  Integrantes.id_integrante AS IdIntegrante,
@@ -29,6 +29,7 @@ public static class IntegranteScripts
 
     public const string ObterTodosOsIntegrantes = @"
             SELECT 
+                 Integrantes.id_integrante AS IdIntegrante,
                  Integrantes.nome AS Nome, 
                  Integrantes_dias_disponiveis.dia_disponivel AS DiaDisponivel, 
                  Tipo_integrante.tipo_integrante AS TipoIntegrante
@@ -36,5 +37,18 @@ public static class IntegranteScripts
              INNER JOIN Integrantes_dias_disponiveis
                  ON Integrantes.id_integrante = Integrantes_dias_disponiveis.id_integrante
              INNER JOIN Tipo_integrante
-                 ON Integrantes.id_integrante = Tipo_integrante.id_integrante;";
+                 ON Integrantes.id_integrante = Tipo_integrante.id_integrante 
+             ORDER BY Integrantes.id_integrante
+             LIMIT @PageSize OFFSET @Offset
+             
+            SELECT 
+                 COUNT(*)
+             FROM Integrantes
+             INNER JOIN Integrantes_dias_disponiveis
+                 ON Integrantes.id_integrante = Integrantes_dias_disponiveis.id_integrante
+             INNER JOIN Tipo_integrante
+                 ON Integrantes.id_integrante = Tipo_integrante.id_integrante";
+
+    public const string InserirIntegrante = @"INSERT INTO Integrantes(nome) VALUES(@nome);
+                                              SELECT last_insert_rowid();";
 }

@@ -1,6 +1,6 @@
-using EscalaApi.Data.Repositories;
-using EscalaApi.Data.Repositories.Interfaces;
+using EscalaApi.Repositories;
 using EscalaApi.Mappers;
+using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Services;
 using EscalaApi.Services.Interfaces;
 
@@ -13,11 +13,18 @@ public static class ServiceRegistration
         //Integrante
         services.AddScoped<IIntegranteService, IntegranteService>();
         services.AddScoped<IIntegranteRepository, IntegranteRepository>();
+
         
         //Escala
         services.AddScoped<IEscalaManagerService, EscalaManager>();
         services.AddScoped<IEscalaRepository, EscalaRepository>();
 
+        
+        //Tipo integrante 
+        services.AddScoped<ITipoIntegranteRepository, TipoIntegranteRepository>();
+        
+        //Dias disponiveis
+        services.AddScoped<IIntegranteDiasDisponiveisRepository, IntegranteDiasDisponiveisRepository>();
         
         return services;
     }

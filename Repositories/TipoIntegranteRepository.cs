@@ -3,10 +3,12 @@ using Dapper;
 using EscalaApi.Data;
 using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
+using EscalaApi.Data.Scripts;
+using EscalaApi.Repositories.Interfaces;
 
-namespace Escala.Business.Data.Repository;
+namespace EscalaApi.Repositories;
 
-public class TipoIntegranteRepository
+public class TipoIntegranteRepository : ITipoIntegranteRepository
 {
     private readonly IMapper _mapper;
 
@@ -26,5 +28,23 @@ public class TipoIntegranteRepository
         var result = connection.Query<TipoIntegranteDto>(sql, new { idIntegrante }).ToList();
 
         return _mapper.Map<IEnumerable<Integrante>>(result);
+    }
+
+    public async Task<bool> InserirTipoIntegrante(List<TipoIntegranteDto> tipoIntegranteDto)
+    {
+        try
+        {
+            const string insertResult = TipoIntegranteScripts.InserirTipoIntegrante;
+
+            await using var connection = DatabaseContext.GetConnection();
+
+            await connection.ExecuteAsync(insertResult, tipoIntegranteDto);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
     }
 }

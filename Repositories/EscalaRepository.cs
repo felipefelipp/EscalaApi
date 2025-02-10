@@ -1,30 +1,31 @@
 using Dapper;
+using EscalaApi.Data;
 using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
-using EscalaApi.Data.Repositories.Interfaces;
 using EscalaApi.Data.Scripts;
+using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Utils.Enums;
 
-namespace EscalaApi.Data.Repositories;
+namespace EscalaApi.Repositories;
 
 public class EscalaRepository : IEscalaRepository
 {
-    public async Task<List<Entities.Escala>> ObterEscalas()
+    public async Task<List<Data.Entities.Escala>> ObterEscalas()
     {
-        var escala = new List<Entities.Escala>();
+        var escala = new List<Data.Entities.Escala>();
 
         await using var connection = DatabaseContext.GetConnection();
 
         const string queryResult = EscalaScripts.ObterEscala;
-        
+
         var result = await connection.QueryAsync<EscalaDto>(queryResult);
 
         foreach (var escalaDto in result)
         {
-            escala.Add(new Entities.Escala()
+            escala.Add(new Data.Entities.Escala()
             {
                 Data = escalaDto.Data.Value,
-                TipoEscala = (TipoEscala) escalaDto.TipoEscala,
+                TipoEscala = (TipoEscala)escalaDto.TipoEscala,
                 Integrante = new Integrante(escalaDto.IdIntegrante.Value)
             });
         }
@@ -32,14 +33,8 @@ public class EscalaRepository : IEscalaRepository
         return escala;
     }
 
-    public async Task InserirEscala(List<Entities.Escala> escalas)
+    public async Task InserirEscala(List<EscalaDto> escalaDto)
     {
-        var escalaDto = new List<EscalaDto>();
-        foreach (var escala in escalas)
-        {
-            escalaDto.Add(new EscalaDto(escala.Integrante.IdIntegrante, escala.Data, (int)escala.TipoEscala));
-        }
-
         const string insertResult = EscalaScripts.InserirEscala;
 
         await using var connection = DatabaseContext.GetConnection();

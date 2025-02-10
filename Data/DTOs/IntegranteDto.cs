@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace EscalaApi.Data.DTOs;
 
 public class IntegranteDto
