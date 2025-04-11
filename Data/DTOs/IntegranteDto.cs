@@ -6,6 +6,6 @@ public class IntegranteDto
 {
     public int? IdIntegrante { get; set; }
     public string? Nome { get; set; }
-    public int DiaDisponivel { get; set; } 
-    public int TipoIntegrante { get; set; } 
+    public List<int> DiasDaSemanaDisponiveis { get; set; } 
+    public List<int> TipoIntegrante { get; set; } 
 }   

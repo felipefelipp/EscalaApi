@@ -1,3 +1,4 @@
+using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
 using EscalaApi.Data.Request;
 using EscalaApi.Services.Results;
@@ -10,4 +11,6 @@ public interface IIntegranteService
     Task<Result<Integrante>> ObterIntegrantePorId(int idIntegrante);
     Task<Result<List<Integrante>>> ObterIntegrantesPorTipo(TipoIntegrante tipoIntegrante);
     Task<Result<Integrante>> RegistrarIntegrante(IntegranteRequest integranteRequest);
+    Task<Result<IntegrantesResultDto>> ObterIntegrantes(int pageNumber, int pageSize);
+    Task<Result> EditarIntegrante(int idIntegrante, IntegranteRequest integrante);
 }

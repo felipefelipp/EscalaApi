@@ -6,4 +6,6 @@ public class IntegranteDiasDisponiveisScripts
                                                             (id_integrante, dia_disponivel)
                                                             VALUES 
                                                             (@IdIntegrante, @DiaDisponivel)";
+   public const string RemoverIntegranteDiasDisponiveis = @"DELETE FROM integrantes_dias_disponiveis
+                                                            WHERE id_integrante = @IdIntegrante";
 }

@@ -37,6 +37,26 @@ public class IntegranteController : ControllerBase
 
         return Ok(retorno);
     }
+    
+    [HttpGet("/Integrantes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ObterIntegrantes(int pageNumber, int pageSize)
+    {
+        var retorno = await _integranteService.ObterIntegrantes(pageNumber, pageSize);
+
+        if (!retorno.Sucess)
+        {
+            if (retorno.StatusCode == HttpStatusCode.NotFound)
+                return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+
+            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        }
+
+        return Ok(retorno);
+    }
 
     /// <summary>
     /// Obtém uma lista de integrantes com base no tipo fornecido.
@@ -92,5 +112,24 @@ public class IntegranteController : ControllerBase
         }
 
         return Ok(retorno);
+    }
+
+    [HttpPut("/Integrante/{idIntegrante}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> EditarIntegrante(int idIntegrante, IntegranteRequest integrante)
+    {
+        var retorno = await _integranteService.EditarIntegrante(idIntegrante, integrante);
+        
+        if (!retorno.Sucess)
+        {
+            if (retorno.StatusCode == HttpStatusCode.NotFound)
+                return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+
+            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        }
+        return NoContent();
     }
 }

@@ -9,5 +9,6 @@ public interface IIntegranteRepository
     Task<Integrante> ObterIntegrantePorId(int idIntegrante);
     Task<List<Integrante>?> ObterIntegrantesPorTipo(TipoIntegrante tipoIntegrante);
     Task<int> InserirIntegrante(IntegranteDto integrante);
-    Task<(IEnumerable<Integrante> integrantes, int total)> ObterIntegrantes(int pageNumber, int pageSize);
+    Task<IntegrantesResultDto> ObterIntegrantes(int pageNumber, int pageSize);
+    Task<bool> AtualizarIntegrante(IntegranteDto integrante);
 }
