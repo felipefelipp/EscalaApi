@@ -31,6 +31,6 @@ public static class ServiceRegistration
 
     public static void AddMappingServices(this IServiceCollection services)
     {
-        services.AddAutoMapper(typeof(MappingProfile));
+       // services.AddAutoMapper(typeof(MappingProfile));
     }
 }

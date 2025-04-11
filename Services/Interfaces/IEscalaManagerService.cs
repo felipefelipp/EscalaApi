@@ -5,6 +5,6 @@ namespace EscalaApi.Services.Interfaces;
 
 public interface IEscalaManagerService
 {
-    Task<Result> CriarEscala(EscalaIntegrantes escala);
-    Task<Result<List<Data.Entities.Escala>>> ObterEscalas();
+    Task<Result<List<Escala>>> CriarEscala(EscalaIntegrantes escala);
+    Task<Result<List<Escala>>> ObterEscalas();
 }

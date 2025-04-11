@@ -4,5 +4,9 @@ public enum TipoIntegrante
 {
     Ministro,
     BackingVocal,
-    Instrumentista
+    Teclado,
+    Violao,
+    ContraBaixo,
+    Guitarra,
+    Bateria
 }

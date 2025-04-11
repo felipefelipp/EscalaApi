@@ -19,96 +19,25 @@ public class EscalaManager : IEscalaManagerService
         _escalaRepository = escalaRepository;
     }
 
-    public async Task<Result> CriarEscala(EscalaIntegrantes escala)
+    public async Task<Result<List<Escala>>> CriarEscala(EscalaIntegrantes escala)
     {
-        var escalaIntegrantes = new List<Data.Entities.Escala>();
+        var escalaDto = new List<EscalaDto>();
+        var escalaIntegrantes = new List<Escala>();
         var erros = new List<Notification>();
 
-        foreach (var dia in escala.DiasDaEscala)
+        foreach (var dia in escala.DiasDaSemana)
         {
-            var escalaDia = ObterDiasEscala(escala.DataInicio, escala.DataFim, dia);
+            var DiasDaEscala = ObterDiasEscala(escala.DataInicio, escala.DataFim, dia);
 
             if (escala.TipoIntegrante is not null)
             {
-                switch (escala.TipoIntegrante)
-                {
-                    case TipoIntegrante.Ministro:
-                        var ministros = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Ministro);
-                        if (ministros == null || !ministros.Any())
-                        {
-                            break;
-                        }
-
-                        var escalaMinistro = GerarEscala(ministros, escalaDia, TipoEscala.Ministro);
-
-                        escalaIntegrantes.AddRange(escalaMinistro);
-                        break;
-
-                    case TipoIntegrante.BackingVocal:
-                        var backingVocals =
-                            await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.BackingVocal);
-                        if (backingVocals == null || !backingVocals.Any())
-                        {
-                            break;
-                        }
-
-                        var escalaBackingVocal = GerarEscala(backingVocals, escalaDia, TipoEscala.BackingVocal);
-
-                        escalaIntegrantes.AddRange(escalaBackingVocal);
-                        break;
-
-                    case TipoIntegrante.Instrumentista:
-                        var instrumentistas =
-                            await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Instrumentista);
-                        if (instrumentistas == null || !instrumentistas.Any())
-                        {
-                            break;
-                        }
-
-                        var escalaInstrumentista = GerarEscala(instrumentistas, escalaDia, TipoEscala.Instrumentista);
-
-                        escalaIntegrantes.AddRange(escalaInstrumentista);
-                        break;
-
-                    default:
-                        erros.Add(new Notification("TipoIntegrante", $"Tipo {escala.TipoIntegrante} não reconhecido."));
-                        break;
-                }
-            }
-            else
-            {
-                var ministros = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Ministro);
-                if (ministros == null || !ministros.Any())
-                {
-                    var escalaMinistro = GerarEscala(ministros, escalaDia, TipoEscala.Ministro);
-
-                    escalaIntegrantes.AddRange(escalaMinistro);
-                }
-
-                var backingVocals =
-                    await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.BackingVocal);
-                if (backingVocals == null || !backingVocals.Any())
-                {
-                    var escalaBackingVocal = GerarEscala(backingVocals, escalaDia, TipoEscala.BackingVocal);
-
-                    escalaIntegrantes.AddRange(escalaBackingVocal);
-                }
-
-                var instrumentistas =
-                    await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Instrumentista);
-                if (instrumentistas == null || !instrumentistas.Any())
-                {
-                    var escalaInstrumentista = GerarEscala(instrumentistas, escalaDia, TipoEscala.Instrumentista);
-
-                    escalaIntegrantes.AddRange(escalaInstrumentista);
-                }
+                ProcessarEscalas(escala.TipoIntegrante, DiasDaEscala, escalaIntegrantes, erros);
             }
         }
 
         if (erros.Any())
-            return Result.BadRequest(erros);
+            return Result<List<Escala>>.BadRequest(erros);
 
-        var escalaDto = new List<EscalaDto>();
         foreach (var escalaIntegrante in escalaIntegrantes)
         {
             escalaDto.Add(new EscalaDto(escalaIntegrante.Integrante.IdIntegrante,
@@ -116,203 +45,22 @@ public class EscalaManager : IEscalaManagerService
                 (int)escalaIntegrante.TipoEscala));
         }
 
-        await _escalaRepository.InserirEscala(escalaDto);
-
-        return Result.Ok();
+        //await _escalaRepository.InserirEscala(escalaDto);
+        return Result<List<Escala>>.Ok(escalaIntegrantes);
     }
 
-    public async Task<Result<List<Data.Entities.Escala>>> ObterEscalas()
+    public async Task<Result<List<Escala>>> ObterEscalas()
     {
         var escalas = await _escalaRepository.ObterEscalas();
 
-        return Result<List<Data.Entities.Escala>>.Ok(escalas);
+        return Result<List<Escala>>.Ok(escalas);
     }
-    // public void ObterEscalaMinistros(EscalaIntegrantes escalaIntegrantes)
-    // {
-    //     var ministros = escalaIntegrantes.Integrantes.Where(i => i.TipoIntegrante == TipoIntegrante.Ministro).ToList();
-    //     var backingVocal = escalaIntegrantes.Integrantes.Where(i => i.TipoIntegrante == TipoIntegrante.BackingVocal)
-    //         .ToList();
-    //     var instrumentista = escalaIntegrantes.Integrantes.Where(i => i.TipoIntegrante == TipoIntegrante.Instrumentista)
-    //         .ToList();
-    //
-    //     var escala = new List<Data.Entities.Escala>();
-    //
-    //     foreach (var dia in escalaIntegrantes.Dias)
-    //     {
-    //         var escalaDia = ObterDiasEscala(escalaIntegrantes.DataInicio, escalaIntegrantes.DataFim, dia);
-    //         var escalaMinistro = GerarEscala(ministros, escalaDia);
-    //         var escalaBackingVocal = GerarEscalaBackingVocal(ministros, backingVocal, escalaDia);
-    //         //var escalaInstrumentista = GerarEscala(instrumentista, escalaDia);
-    //
-    //         escala.AddRange(escalaMinistro);
-    //         escala.AddRange(escalaBackingVocal);
-    //         // escala.AddRange(escalaInstrumentista);
-    //     }
-    //
-    //     var escalaOrdenada = escala.OrderBy(e => e.Data).ToList();
-    //     //var escalaAjustada = AjustarIntegranteSubsequenteComHistorico(escalaOrdenada);
-    //     //var ajusteEscalaMinistro = AjustarIntegranteMinistroSubsequenteComHistorico(escalaOrdenada);
-    //     //var ajusteEscalaBackingVocal = AjustarIntegranteBackingVocalSubsequenteComHistorico(ajusteEscalaMinistro);
-    //     ImprimirEscala.ExportarEscala(escalaOrdenada, escalaIntegrantes.DataInicio, escalaIntegrantes.DataFim);
-    // }
 
-    // private static List<Escala> AjustarIntegranteSubsequenteComHistorico(List<Escala> escala)
-    // {
-    //     // Dicionário para contar as ocorrências de cada integrante na escala
-    //     var contadorSelecoes = escala
-    //         .GroupBy(e => e.Integrante.Nome)
-    //         .ToDictionary(g => g.Key, g => g.Count());
-    //
-    //     for (int i = 1; i < escala.Count; i++)
-    //     {
-    //         // Se o integrante atual for igual ao anterior
-    //         if (escala[i].Integrante.Nome == escala[i - 1].Integrante.Nome)
-    //         {
-    //             bool encontrouSubstituto = false;
-    //
-    //             // Busca o integrante menos selecionado que atende às condições
-    //             var candidato = escala
-    //                 .Where(e =>
-    //                     e.NomeSemana == escala[i].NomeSemana && // Mesmo dia da semana
-    //                     e.Integrante.TipoIntegrante == escala[i].Integrante.TipoIntegrante && // Mesmo tipo de integrante
-    //                     e.Integrante.Nome != escala[i].Integrante.Nome && // Diferente do atual
-    //                     e.Integrante.Nome != escala[i - 1].Integrante.Nome && // Diferente do anterior
-    //                     (i + 1 >= escala.Count || e.Integrante.Nome != escala[i + 1].Integrante.Nome) && // Diferente do próximo
-    //                     !escala.Skip(Math.Max(0, i - 3)).Take(3).Any(x => x.Integrante.Nome == e.Integrante.Nome)
-    //                     ) // Não foi usado recentemente
-    //                 .OrderBy(e => contadorSelecoes[e.Integrante.Nome]) // Ordena pelo menor número de seleções
-    //                 .FirstOrDefault();
-    //
-    //             if (candidato != null)
-    //             {
-    //                 // Realiza a troca
-    //                 (escala[i].Integrante, candidato.Integrante) = (candidato.Integrante, escala[i].Integrante);
-    //
-    //                 // Atualiza o contador de seleções
-    //                 contadorSelecoes[escala[i].Integrante.Nome]++;
-    //                 contadorSelecoes[candidato.Integrante.Nome]--;
-    //
-    //                 encontrouSubstituto = true;
-    //             }
-    //
-    //             if (!encontrouSubstituto)
-    //             {
-    //                 Console.WriteLine($"Não foi possível ajustar o integrante {escala[i].Integrante.Nome} na posição {i}.");
-    //             }
-    //         }
-    //     }
-    //
-    //     return escala;
-    // }
-    //
-    // #region ajusteEscala
-    //
-    // private static List<Escala> AjustarIntegranteBackingVocalSubsequenteComHistorico(List<Escala> escala)
-    // {
-    //     // Dicionário para contar as ocorrências de cada integrante na escala
-    //     var contadorSelecoes = escala
-    //         .GroupBy(e => e.Integrante.Nome)
-    //         .ToDictionary(g => g.Key, g => g.Count());
-    //
-    //     for (int i = 1; i < escala.Count; i++)
-    //     {
-    //         // Se o integrante atual for igual ao anterior
-    //         if (escala[i].Integrante.Nome == escala[i - 1].Integrante.Nome && escala[i].Integrante.TipoIntegrante == TipoIntegrante.BackingVocal)
-    //         {
-    //             bool encontrouSubstituto = false;
-    //
-    //             // Busca o integrante menos selecionado que atende às condições
-    //             var candidato = escala
-    //                 .Where(e =>
-    //                     e.NomeSemana == escala[i].NomeSemana && // Mesmo dia da semana
-    //                     e.Integrante.TipoIntegrante == escala[i].Integrante.TipoIntegrante && // Mesmo tipo de integrante
-    //                     e.Integrante.Nome != escala[i].Integrante.Nome && // Diferente do atual
-    //                     e.Integrante.Nome != escala[i - 1].Integrante.Nome && // Diferente do anterior
-    //                     (i + 1 >= escala.Count || e.Integrante.Nome != escala[i + 1].Integrante.Nome) && // Diferente do próximo
-    //                     !escala.Skip(Math.Max(0, i - 3)).Take(3).Any(x => x.Integrante.Nome == e.Integrante.Nome)
-    //                     ) // Não foi usado recentemente
-    //                 .OrderBy(e => contadorSelecoes[e.Integrante.Nome]) // Ordena pelo menor número de seleções
-    //                 .FirstOrDefault();
-    //
-    //             if (candidato != null)
-    //             {
-    //                 // Realiza a troca
-    //                 (escala[i].Integrante, candidato.Integrante) = (candidato.Integrante, escala[i].Integrante);
-    //
-    //                 // Atualiza o contador de seleções
-    //                 contadorSelecoes[escala[i].Integrante.Nome]++;
-    //                 contadorSelecoes[candidato.Integrante.Nome]--;
-    //
-    //                 encontrouSubstituto = true;
-    //             }
-    //
-    //             if (!encontrouSubstituto)
-    //             {
-    //                 Console.WriteLine($"Não foi possível ajustar o integrante {escala[i].Integrante.Nome} na posição {i}.");
-    //             }
-    //         }
-    //     }
-    //
-    //     return escala;
-    // }
-    //
-    // private static List<Escala> AjustarIntegranteMinistroSubsequenteComHistorico(List<Escala> escala)
-    // {
-    //     // Dicionário para contar as ocorrências de cada integrante na escala
-    //     var contadorSelecoes = escala
-    //         .GroupBy(e => e.Integrante.Nome)
-    //         .ToDictionary(g => g.Key, g => g.Count());
-    //
-    //     for (int i = 1; i < escala.Count; i++)
-    //     {
-    //         // Se o integrante atual for igual ao anterior
-    //         if (escala[i].Integrante.Nome == escala[i - 1].Integrante.Nome && escala[i].Integrante.TipoIntegrante == TipoIntegrante.Ministro)
-    //         {
-    //             bool encontrouSubstituto = false;
-    //
-    //             // Busca o integrante menos selecionado que atende às condições
-    //             var candidato = escala
-    //                 .Where(e =>
-    //                     e.NomeSemana == escala[i].NomeSemana && // Mesmo dia da semana
-    //                     e.Integrante.TipoIntegrante == escala[i].Integrante.TipoIntegrante && // Mesmo tipo de integrante
-    //                                                                                           //escala[i].Integrante.TipoIntegrante == TipoIntegrante.Ministro &&
-    //                     e.Integrante.Nome != escala[i].Integrante.Nome && // Diferente do atual
-    //                     e.Integrante.Nome != escala[i - 1].Integrante.Nome && // Diferente do anterior
-    //                     (i + 1 >= escala.Count || e.Integrante.Nome != escala[i + 1].Integrante.Nome) && // Diferente do próximo
-    //                     !escala.Skip(Math.Max(0, i - 3)).Take(3).Any(x => x.Integrante.Nome == e.Integrante.Nome)
-    //                     ) // Não foi usado recentemente
-    //                 .OrderBy(e => contadorSelecoes[e.Integrante.Nome]) // Ordena pelo menor número de seleções
-    //                 .FirstOrDefault();
-    //
-    //             if (candidato != null)
-    //             {
-    //                 // Realiza a troca
-    //                 (escala[i].Integrante, candidato.Integrante) = (candidato.Integrante, escala[i].Integrante);
-    //
-    //                 // Atualiza o contador de seleções
-    //                 contadorSelecoes[escala[i].Integrante.Nome]++;
-    //                 contadorSelecoes[candidato.Integrante.Nome]--;
-    //
-    //                 encontrouSubstituto = true;
-    //             }
-    //
-    //             if (!encontrouSubstituto)
-    //             {
-    //                 Console.WriteLine($"Não foi possível ajustar o integrante {escala[i].Integrante.Nome} na posição {i}.");
-    //             }
-    //         }
-    //     }
-    //
-    //     return escala;
-    // }
-    //
-    // #endregion
-
-    private static List<Data.Entities.Escala> GerarEscala(List<Integrante> integrantes,
+    private static List<Escala> GerarEscala(List<Integrante> integrantes,
         List<DiaSemana> diasEscala,
         TipoEscala tipoEscala)
     {
-        var escala = new List<Data.Entities.Escala>();
+        var escala = new List<Escala>();
         Integrante? primeiroEscolhido = null;
         Integrante integranteEscolhido;
         var random = new Random();
@@ -321,7 +69,7 @@ public class EscalaManager : IEscalaManagerService
 
         foreach (var dia in diasEscala)
         {
-            var disponiveis = integrantes.Where(i => i.DiasDisponiveis.Contains(dia.DayOfWeek)).ToList();
+            var disponiveis = integrantes.Where(i => i.DiasDaSemanaDisponiveis.Contains(dia.DayOfWeek)).ToList();
 
             if (disponiveis.Count <= 0)
             {
@@ -356,61 +104,6 @@ public class EscalaManager : IEscalaManagerService
         return escala;
     }
 
-    // private static List<Data.Entities.Escala> GerarEscalaBackingVocal(List<Integrante> ministros,
-    //     List<Integrante> integrantes,
-    //     List<DiaSemana> diasEscala)
-    // {
-    //     var escala = new List<Data.Entities.Escala>();
-    //     var random = new Random();
-    //     var contadorEscala = new int[integrantes.Count]; // Contador baseado em índices
-    //     int? ultimoIndiceEscolhido = null;
-    //
-    //     foreach (var dia in diasEscala)
-    //     {
-    //         // Filtrar os índices dos integrantes disponíveis
-    //         var indicesDisponiveis = integrantes
-    //             .Select((integrante, index) => new { Integrante = integrante, Index = index })
-    //             .Where(x => x.Integrante.DiasDisponiveis.Contains(dia.DayOfWeek))
-    //             .Select(x => x.Index)
-    //             .ToList();
-    //
-    //         if (indicesDisponiveis.Count <= 0)
-    //         {
-    //             Console.WriteLine($"Nenhum integrante disponível para {dia.Data}.");
-    //             continue;
-    //         }
-    //
-    //         int indiceEscolhido;
-    //         do
-    //         {
-    //             // Sorteia aleatoriamente um índice disponível
-    //             indiceEscolhido = indicesDisponiveis[random.Next(indicesDisponiveis.Count)];
-    //         } while (
-    //             // Reapete o sorteio se o índice pertence a um ministro
-    //             ministros.Select(min => integrantes.IndexOf(min)).Contains(indiceEscolhido) ||
-    //             // Ou se o índice é consecutivo ou igual ao de um ministro
-    //             ministros.Select(min => integrantes.IndexOf(min)).Any(indiceMinistro =>
-    //                 Math.Abs(indiceEscolhido - indiceMinistro) <= 1) ||
-    //             // Ou se o índice é o mesmo do último escolhido
-    //             indiceEscolhido == ultimoIndiceEscolhido
-    //         );
-    //
-    //         // Atualiza o último índice escolhido
-    //         ultimoIndiceEscolhido = indiceEscolhido;
-    //
-    //         // Incrementa o contador do integrante pelo índice
-    //         contadorEscala[indiceEscolhido]++;
-    //
-    //         // Adiciona à escala usando o índice
-    //         escala.Add(new Data.Entities.Escala(
-    //             integrantes[indiceEscolhido],
-    //             dia.Data,
-    //             dia.DayOfWeek));
-    //     }
-    //
-    //     return escala;
-    // }
-
     public static List<DiaSemana> ObterDiasEscala(DateTime dataInicio, DateTime dataFim, DayOfWeek diaDaSemana)
     {
         var diasEscala = new List<DiaSemana>();
@@ -431,5 +124,102 @@ public class EscalaManager : IEscalaManagerService
         }
 
         return diasEscala;
+    }
+
+    private async Task ProcessarEscalas(
+        List<TipoIntegrante> tipos,
+        List<DiaSemana> escalaDia,
+        List<Escala> escalaIntegrantes,
+        List<Notification> erros)
+    {
+        foreach (var tipo in tipos)
+        {
+            switch (tipo)
+            {
+                case TipoIntegrante.Ministro:
+                {
+                    var ministros = await _integranteRepository.ObterIntegrantesPorTipo(tipo);
+                    if (ministros == null || !ministros.Any())
+                        break;
+
+                    var escalaMinistro = GerarEscala(ministros, escalaDia, TipoEscala.Ministro);
+                    escalaIntegrantes.AddRange(escalaMinistro);
+                    break;
+                }
+
+                case TipoIntegrante.BackingVocal:
+                {
+                    var backingVocals = await _integranteRepository.ObterIntegrantesPorTipo(tipo);
+                    if (backingVocals == null || !backingVocals.Any())
+                        break;
+
+                    var escalaBackingVocal = GerarEscala(backingVocals, escalaDia, TipoEscala.BackingVocal);
+                    escalaIntegrantes.AddRange(escalaBackingVocal);
+                    break;
+                }
+
+                case TipoIntegrante.Teclado:
+                {
+                    var tecladistas = await _integranteRepository.ObterIntegrantesPorTipo(tipo);
+                    if (tecladistas == null || !tecladistas.Any())
+                        break;
+
+                    var escalaTeclado = GerarEscala(tecladistas, escalaDia, TipoEscala.Teclado);
+                    escalaIntegrantes.AddRange(escalaTeclado);
+                    break;
+                }
+
+                case TipoIntegrante.Violao:
+                {
+                    var violonistas = await _integranteRepository.ObterIntegrantesPorTipo(tipo);
+                    if (violonistas == null || !violonistas.Any())
+                        break;
+
+                    var escalaViolao = GerarEscala(violonistas, escalaDia, TipoEscala.Violao);
+                    escalaIntegrantes.AddRange(escalaViolao);
+                    break;
+                }
+
+                case TipoIntegrante.ContraBaixo:
+                {
+                    var baixistas = await _integranteRepository.ObterIntegrantesPorTipo(tipo);
+                    if (baixistas == null || !baixistas.Any())
+                        break;
+
+                    var escalaBaixo = GerarEscala(baixistas, escalaDia, TipoEscala.ContraBaixo);
+                    escalaIntegrantes.AddRange(escalaBaixo);
+                    break;
+                }
+
+                case TipoIntegrante.Guitarra:
+                {
+                    var guitarristas = await _integranteRepository.ObterIntegrantesPorTipo(tipo);
+                    if (guitarristas == null || !guitarristas.Any())
+                        break;
+
+                    var escalaGuitarra = GerarEscala(guitarristas, escalaDia, TipoEscala.Guitarra);
+                    escalaIntegrantes.AddRange(escalaGuitarra);
+                    break;
+                }
+
+                default:
+                    erros.Add(new Notification("TipoIntegrante", $"Tipo {tipo} não reconhecido."));
+                    break;
+            }
+        }
+    }
+
+    private TipoEscala? MapearTipoEscala(TipoIntegrante tipo)
+    {
+        return tipo switch
+        {
+            TipoIntegrante.Ministro => TipoEscala.Ministro,
+            TipoIntegrante.BackingVocal => TipoEscala.BackingVocal,
+            TipoIntegrante.Teclado => TipoEscala.Teclado,
+            TipoIntegrante.Violao => TipoEscala.Violao,
+            TipoIntegrante.ContraBaixo => TipoEscala.ContraBaixo,
+            TipoIntegrante.Guitarra => TipoEscala.Guitarra,
+            _ => null
+        };
     }
 }

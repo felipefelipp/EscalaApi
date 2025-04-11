@@ -34,7 +34,7 @@ public class EscalaController : ControllerBase
             return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
         }
 
-        return Created();
+        return Ok(retorno);
     }
     
     [HttpGet("/Escalas")]
