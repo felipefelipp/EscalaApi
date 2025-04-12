@@ -12,5 +12,6 @@ public interface IIntegranteService
     Task<Result<List<Integrante>>> ObterIntegrantesPorTipo(TipoIntegrante tipoIntegrante);
     Task<Result<Integrante>> RegistrarIntegrante(IntegranteRequest integranteRequest);
     Task<Result<IntegrantesResultDto>> ObterIntegrantes(int pageNumber, int pageSize);
-    Task<Result> EditarIntegrante(int idIntegrante, IntegranteRequest integrante);
+    Task<Result<Integrante>> EditarIntegrante(int idIntegrante, IntegranteRequest integrante);
+    Task<Result> ExcluirIntegrante(int idIntegrante);
 }

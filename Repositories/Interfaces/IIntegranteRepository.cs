@@ -11,4 +11,5 @@ public interface IIntegranteRepository
     Task<int> InserirIntegrante(IntegranteDto integrante);
     Task<IntegrantesResultDto> ObterIntegrantes(int pageNumber, int pageSize);
     Task<bool> AtualizarIntegrante(IntegranteDto integrante);
+    Task<bool> RemoverIntegrante(int idIntegrante);
 }

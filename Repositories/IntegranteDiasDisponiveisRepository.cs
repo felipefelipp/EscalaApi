@@ -60,4 +60,23 @@ public class IntegranteDiasDisponiveisRepository : IIntegranteDiasDisponiveisRep
             return false;
         }
     }
+
+    public async Task<bool> RemoverDiasDisponiveis(int idIntegrante)
+    {
+        try
+        {
+            await using var connection = DatabaseContext.GetConnection();
+            DynamicParameters parameters = new DynamicParameters();
+            parameters.Add("@IdIntegrante", idIntegrante, DbType.Int32);
+
+            const string removeResult = IntegranteDiasDisponiveisScripts.RemoverIntegranteDiasDisponiveis;
+            await connection.ExecuteAsync(removeResult, parameters);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
 }
