@@ -130,6 +130,25 @@ public class IntegranteController : ControllerBase
 
             return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
         }
+        return Ok(retorno);
+    }
+    
+    [HttpDelete("/Integrante/{idIntegrante}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ExcluirIntegrante(int idIntegrante)
+    {
+        var retorno = await _integranteService.ExcluirIntegrante(idIntegrante);
+        
+        if (!retorno.Sucess)
+        {
+            if (retorno.StatusCode == HttpStatusCode.NotFound)
+                return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+
+            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        }
         return NoContent();
     }
 }

@@ -6,5 +6,6 @@ public interface IIntegranteDiasDisponiveisRepository
 {
     Task<bool> InserirDiasDisponiveis(IntegranteDto diasDisponiveisDto);
     Task<bool> AtualizarDiasDisponiveis(IntegranteDto diasDisponiveisDto);
+    Task<bool> RemoverDiasDisponiveis(int idIntegrante);
 
 }

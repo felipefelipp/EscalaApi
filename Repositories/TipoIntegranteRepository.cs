@@ -12,20 +12,6 @@ public class TipoIntegranteRepository : ITipoIntegranteRepository
     public TipoIntegranteRepository()
     {
     }
-
-    // public IEnumerable<Integrante> ObterTiposIntegrante(int idIntegrante)
-    // {
-    //     using var connection = DatabaseContext.GetConnection();
-    //
-    //     var sql = @"SELECT tipo_integrante
-    //                 FROM Tipo_integrante
-    //                 WHERE id_integrante = @idIntegrante";
-    //
-    //     var result = connection.Query<TipoIntegranteDto>(sql, new { idIntegrante }).ToList();
-    //     
-    //     return _mapper.Map<IEnumerable<Integrante>>(result);
-    // }
-
     public async Task<bool> InserirTipoIntegrante(IntegranteDto tipoIntegranteDto)
     {
         try
@@ -67,6 +53,25 @@ public class TipoIntegranteRepository : ITipoIntegranteRepository
                 parametrosInsercao.Add("@TipoIntegrante", tipo, DbType.Int32);
                 await connection.ExecuteAsync(insertResult, parametrosInsercao);
             }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> RemoverTipoIntegrante(int idIntegrante)
+    {
+        try
+        {
+            await using var connection = DatabaseContext.GetConnection();
+            DynamicParameters parametrosRemocao = new DynamicParameters();
+            parametrosRemocao.Add("@IdIntegrante", idIntegrante, DbType.Int32);
+
+            const string removeResult = TipoIntegranteScripts.ExcluirTipoIntegrante;
+            await connection.ExecuteAsync(removeResult, parametrosRemocao);
 
             return true;
         }

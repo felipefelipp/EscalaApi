@@ -7,6 +7,7 @@ using EscalaApi.Data.Scripts;
 using EscalaApi.Mappers;
 using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Utils.Enums;
+using Exception = System.Exception;
 
 namespace EscalaApi.Repositories;
 
@@ -197,6 +198,25 @@ public class IntegranteRepository : IIntegranteRepository
         catch (Exception ex)
         {
             throw new Exception($"Erro ao inserir integrante: {ex.Message}", ex);
+        }
+    }
+    
+    public async Task<bool> RemoverIntegrante(int idIntegrante)
+    {
+        try
+        {
+            await using var connection = DatabaseContext.GetConnection();
+
+            DynamicParameters parameters = new DynamicParameters();
+            parameters.Add("@idIntegrante", idIntegrante, DbType.Int32);
+            const string removeResult = IntegranteScripts.RemoverIntegrante;
+
+            await connection.ExecuteAsync(removeResult, parameters);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Erro ao atualizar integrante: {ex.Message}", ex);
         }
     }
 }

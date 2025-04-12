@@ -58,4 +58,6 @@ public static class IntegranteScripts
     public const string AtualizarIntegrante = @"UPDATE Integrantes
                                                 SET nome = @nome
                                                 WHERE id_integrante = @idIntegrante";
+    
+    public const string RemoverIntegrante = @"DELETE FROM Integrantes WHERE id_integrante = @idIntegrante";
 }

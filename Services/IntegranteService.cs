@@ -54,7 +54,7 @@ public class IntegranteService : IIntegranteService
         return Result<IntegrantesResultDto>.Ok(integrantes);
     }
 
-    public async Task<Result> EditarIntegrante(int idIntegrante, IntegranteRequest integrante)
+    public async Task<Result<Integrante>> EditarIntegrante(int idIntegrante, IntegranteRequest integrante)
     {
         var erros = new List<Notification>();
         if (idIntegrante < 0)
@@ -65,7 +65,7 @@ public class IntegranteService : IIntegranteService
         if (integranteEncontrado == null)
         {
             erros.Add(new Notification("", $"Integrante não encontrado."));
-            return Result.NotFound(erros);
+            return Result<Integrante>.NotFound(erros);
         }
 
         integranteEncontrado.Nome = integrante.Nome;
@@ -74,21 +74,21 @@ public class IntegranteService : IIntegranteService
         var integranteDto = integranteEncontrado.ParaDto();
 
         if (erros.Any())
-            return Result.BadRequest(erros);
+            return Result<Integrante>.BadRequest(erros);
 
         var integranteAtualizado = await _integranteRepository.AtualizarIntegrante(integranteDto);
 
         if (!integranteAtualizado)
         {
             erros.Add(new Notification("", $"Não foi possível atualizar o Integrante."));
-            return Result.NotFound(erros);
+            return Result<Integrante>.NotFound(erros);
         }
 
         var tipoIntegranteAtualizado = await _tipoIntegranteRepository.AtualizarTipoIntegrante(integranteDto);
         if (!tipoIntegranteAtualizado)
         {
             erros.Add(new Notification("", $"Não foi possível atualizar o tipo do Integrante."));
-            return Result.NotFound(erros);
+            return Result<Integrante>.NotFound(erros);
         }
 
         var diasDisponiveisIntegranteAtualizado =
@@ -96,10 +96,10 @@ public class IntegranteService : IIntegranteService
         if (!diasDisponiveisIntegranteAtualizado)
         {
             erros.Add(new Notification("", $"Não foi possível atualizar os dias disponíveis do Integrante."));
-            return Result.NotFound(erros);
+            return Result<Integrante>.NotFound(erros);
         }
 
-        return Result.NoContent();
+        return Result<Integrante>.Ok(integranteEncontrado);
     }
 
     public async Task<Result<Integrante>> RegistrarIntegrante(IntegranteRequest integranteRequest)
@@ -112,7 +112,7 @@ public class IntegranteService : IIntegranteService
         if (idIntegranteInserido == 0)
         {
             erros.Add(new Notification(idIntegranteInserido.ToString(), $"Não foi possível inserir integrante."));
-            Result<Integrante>.BadRequest(erros);
+            return Result<Integrante>.BadRequest(erros);
         }
         
         integranteDto.IdIntegrante = idIntegranteInserido;
@@ -139,5 +139,51 @@ public class IntegranteService : IIntegranteService
         integrante.IdIntegrante = idIntegranteInserido;
 
         return Result<Integrante>.Ok(integrante);
+    }
+    
+    public async Task<Result> ExcluirIntegrante(int idIntegrante)
+    {
+        var erros = new List<Notification>();
+        if (idIntegrante < 0)
+            erros.Add(new Notification(idIntegrante.ToString(), "Id inexistente."));
+
+        var integranteEncontrado = await _integranteRepository.ObterIntegrantePorId(idIntegrante);
+
+        if (integranteEncontrado is null || integranteEncontrado.Nome.Length <= 0)
+        {
+            erros.Add(new Notification("", $"Integrante não existe."));
+            return Result.NotFound(erros);
+        }
+        
+        if(erros.Any())
+            return Result.BadRequest(erros);
+        
+        var diasDisponiveisIntegranteRemovido =
+            await _diasDisponiveisRepositoryRepository.RemoverDiasDisponiveis(idIntegrante);
+
+        if (!diasDisponiveisIntegranteRemovido)
+        {
+            erros.Add(new Notification(idIntegrante.ToString(),
+                $"Não foi possível remover os dias disponiveis do integrante."));
+            return Result.BadRequest(erros);
+        }
+        
+        var tipoIntegranteRemovido = await _tipoIntegranteRepository.RemoverTipoIntegrante(idIntegrante);
+
+        if (!tipoIntegranteRemovido)
+        {
+            erros.Add(new Notification(idIntegrante.ToString(), $"Não foi possível remover tipo integrante."));
+            return Result.BadRequest(erros);
+        }
+        
+        var idIntegranteInserido = await _integranteRepository.RemoverIntegrante(idIntegrante);
+
+        if (!idIntegranteInserido)
+        {
+            erros.Add(new Notification(idIntegranteInserido.ToString(), $"Não foi possível remover integrante."));
+            return Result.BadRequest(erros);
+        }
+        
+        return Result.NoContent();
     }
 }
