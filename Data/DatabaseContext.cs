@@ -6,6 +6,6 @@ public static class DatabaseContext
 {
     public static SQLiteConnection GetConnection()
     {
-        return new SQLiteConnection("Data Source=/home/felipe/Desktop/Escala/EscalaApi/database");
+        return new SQLiteConnection("Data Source=./database");
     }
 }

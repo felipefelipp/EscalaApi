@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  escala-api:
+    build:
+      context: .
+      target: development
+    ports:
+      - "8010:8080"
+    volumes:
+      - .:/src
+      - ~/.nuget:/root/.nuget
+      - ./database:/app/database
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development

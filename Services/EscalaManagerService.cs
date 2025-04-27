@@ -31,7 +31,7 @@ public class EscalaManager : IEscalaManagerService
 
             if (escala.TipoIntegrante is not null)
             {
-                ProcessarEscalas(escala.TipoIntegrante, DiasDaEscala, escalaIntegrantes, erros);
+                await ProcessarEscalas(escala.TipoIntegrante, DiasDaEscala, escalaIntegrantes, erros);
             }
         }
 

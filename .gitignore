@@ -20,9 +20,16 @@ obj/
 # Arquivos relacionados ao Git
 !.gitignore
 
-# Pasta que parece conter arquivos de banco de dados
 database/
 
 # Outros arquivos gerados que não precisam ser versionados
 *.cache
 *.tmp
+
+**/bin/
+**/obj/
+*.db
+docker-compose.*.yml
+
+launch.json
+tasks.json

@@ -54,4 +54,13 @@ public class EscalaController : ControllerBase
         
         return Ok(retorno);
     }
+
+    [HttpPut("/Escala/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> EditarEscala(int id) {
+        return Ok();
+    }
 }
