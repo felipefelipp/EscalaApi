@@ -33,3 +33,5 @@ docker-compose.*.yml
 
 launch.json
 tasks.json
+
+/nginx/certs/*
