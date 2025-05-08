@@ -8,8 +8,8 @@ services:
       - "1433:1433"
     volumes:
       - sql-data:/var/opt/mssql
-      - ./db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./db-init/entrypoint.sh:/entrypoint.sh
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/entrypoint.sh:/entrypoint.sh
     restart: always
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
     healthcheck:
