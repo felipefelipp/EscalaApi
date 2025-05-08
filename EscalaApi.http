@@ -1,6 +1,0 @@
-@EscalaApi_HostAddress = http://localhost:5072
-
-GET {{EscalaApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

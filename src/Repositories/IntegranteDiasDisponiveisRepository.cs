@@ -13,7 +13,7 @@ public class IntegranteDiasDisponiveisRepository : IIntegranteDiasDisponiveisRep
     {
         try
         {
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
             const string insertResult = IntegranteDiasDisponiveisScripts.InserirIntegranteDiasDisponiveis;
             DynamicParameters parametrosInsercao = new DynamicParameters();
 
@@ -36,7 +36,7 @@ public class IntegranteDiasDisponiveisRepository : IIntegranteDiasDisponiveisRep
     {
         try
         {
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@IdIntegrante", diasDisponiveisDto.IdIntegrante, DbType.Int32);
 
@@ -65,7 +65,7 @@ public class IntegranteDiasDisponiveisRepository : IIntegranteDiasDisponiveisRep
     {
         try
         {
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@IdIntegrante", idIntegrante, DbType.Int32);
 

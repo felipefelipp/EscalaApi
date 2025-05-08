@@ -53,11 +53,11 @@ public static class IntegranteScripts
                                         ON Integrantes.id_integrante = Tipo_integrante.id_integrante) AS Integrantes";
 
     public const string InserirIntegrante = @"INSERT INTO Integrantes(nome) VALUES(@nome);
-                                              SELECT last_insert_rowid();";
+                                              SELECT SCOPE_IDENTITY();";
     
     public const string AtualizarIntegrante = @"UPDATE Integrantes
                                                 SET nome = @nome
                                                 WHERE id_integrante = @idIntegrante";
-    
+
     public const string RemoverIntegrante = @"DELETE FROM Integrantes WHERE id_integrante = @idIntegrante";
 }

@@ -1,28 +1,46 @@
-﻿**/.dockerignore
-**/.env
-**/.git
-**/.gitignore
-**/.project
-**/.settings
-**/.toolstarget
-**/.vs
-**/.vscode
-**/.idea
-**/*.*proj.user
-**/*.dbmdl
-**/*.jfm
-**/azds.yaml
-**/bin
-**/charts
-**/docker-compose*
-**/Dockerfile*
-**/node_modules
-**/npm-debug.log
-**/obj
-**/secrets.dev.yaml
-**/values.dev.yaml
-LICENSE
-README.md
+﻿# ==== Configurações de IDE ====
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.DotSettings.user
 
-launch.json
-tasks.json
+# ==== Artefatos de Build ====
+bin/
+obj/
+publish/
+*.cache
+*.log
+*.tmp
+
+# ==== Configurações Sensíveis ====
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# ==== Docker ====
+docker-compose.*.yml
+!docker-compose.yml  # Mantém o arquivo principal
+Dockerfile.dev
+
+# ==== Banco de Dados e Certificados ====
+database/
+*.db
+*.mdf
+*.ldf
+/nginx/certs/*
+!nginx/certs/README.md  # Mantém um arquivo de exemplo
+
+# ==== Sistema ====
+.DS_Store
+Thumbs.db
+
+# ==== Dependências ====
+node_modules/
+.nuget/
+packages/
+
+# ==== Testes ====
+TestResults/
+*.trx

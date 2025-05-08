@@ -1,0 +1,42 @@
+services:
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "escalaApi34@FF"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+      - ./db-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db-init/entrypoint.sh:/entrypoint.sh
+    restart: always
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P escalaApi34@FF -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      retries: 10
+      start_period: 10s
+      timeout: 3s
+
+  escala-api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      target: development
+    ports:
+      - "8010:8080"
+    volumes:
+      - ../../src:/app
+      - ~/.nuget:/root/.nuget
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_USE_POLLING_FILE_WATCHER: 1
+      DOTNET_WATCH_RESTART_ON_RUDE_EDIT: 1
+      ConnectionStrings__DefaultConnection: "Server=sql-server;Database=EscalaDb;User Id=sa;Password=escalaApi34@FF;TrustServerCertificate=true;"
+    depends_on:
+      sql-server:
+        condition: service_healthy
+
+volumes:
+  sql-data:

@@ -24,7 +24,7 @@ public class IntegranteRepository : IIntegranteRepository
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@IdIntegrante", idIntegrante, DbType.Int32);
 
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
 
             const string queryResult = IntegranteScripts.ObterIntegrantePorIdScript;
 
@@ -60,7 +60,7 @@ public class IntegranteRepository : IIntegranteRepository
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@TipoIntegrante", tipoIntegrante);
 
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
 
             const string queryResult = IntegranteScripts.ObterIntegrantePorTipoScript;
 
@@ -114,7 +114,7 @@ public class IntegranteRepository : IIntegranteRepository
                 Offset = offset
             };
 
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
 
             const string query = IntegranteScripts.ObterTodosOsIntegrantes;
 
@@ -170,7 +170,7 @@ public class IntegranteRepository : IIntegranteRepository
             parameters.Add("@nome", integrante.Nome, DbType.String);
             parameters.Add("@idIntegrante", integrante.IdIntegrante, DbType.Int32);
 
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
             const string updateResult = IntegranteScripts.AtualizarIntegrante;
 
             await connection.ExecuteAsync(updateResult, parameters);
@@ -189,7 +189,7 @@ public class IntegranteRepository : IIntegranteRepository
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@nome", integrante.Nome, DbType.String);
 
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
             const string insertResult = IntegranteScripts.InserirIntegrante;
 
             var result = await connection.ExecuteScalarAsync<int>(insertResult, parameters);
@@ -205,7 +205,7 @@ public class IntegranteRepository : IIntegranteRepository
     {
         try
         {
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
 
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@idIntegrante", idIntegrante, DbType.Int32);

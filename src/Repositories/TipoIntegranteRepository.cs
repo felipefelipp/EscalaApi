@@ -16,7 +16,7 @@ public class TipoIntegranteRepository : ITipoIntegranteRepository
     {
         try
         {
-            await using var connection = DatabaseContext.GetConnection();
+        using var connection = DatabaseContext.GetConnection();
             const string insertResult = TipoIntegranteScripts.InserirTipoIntegrante;
             foreach (var tipo in tipoIntegranteDto.TipoIntegrante)
             {
@@ -38,7 +38,7 @@ public class TipoIntegranteRepository : ITipoIntegranteRepository
     {
         try
         {
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
             DynamicParameters parametrosRemocao = new DynamicParameters();
             parametrosRemocao.Add("@IdIntegrante", tipoIntegrante.IdIntegrante, DbType.Int32);
 
@@ -66,7 +66,7 @@ public class TipoIntegranteRepository : ITipoIntegranteRepository
     {
         try
         {
-            await using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
             DynamicParameters parametrosRemocao = new DynamicParameters();
             parametrosRemocao.Add("@IdIntegrante", idIntegrante, DbType.Int32);
 
