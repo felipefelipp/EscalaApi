@@ -12,7 +12,7 @@ done
 
 # Run your init script
 echo "Running init.sql..."
-/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P escalaApi34@FF -C -i /db/init.sql
+/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P escalaApi34@FF -C -i /docker-entrypoint-initdb.d/init.sql
 echo "Finished running init.sql."
 # Keep container alive
 wait
