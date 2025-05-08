@@ -1,37 +1,50 @@
-# Arquivos de configuração sensíveis
-appsettings.Development.json
-
-# Pastas geradas pelo .NET durante a build
-bin/
-obj/
-
-# Arquivos temporários do Visual Studio
+# ==== Arquivos de IDE ====
+.vs/
+.vscode/
+.idea/
 *.user
 *.suo
-*.vs
 *.sln.DotSettings.user
 
-# Arquivos de log ou temporários
-*.log
-
-# Backup do sistema operacional/macOS
-.DS_Store
-
-# Arquivos relacionados ao Git
-!.gitignore
-
-database/
-
-# Outros arquivos gerados que não precisam ser versionados
+# ==== Build do .NET ====
+bin/
+obj/
 *.cache
+*.log
 *.tmp
+*.pdb
+*.dll.config
 
-**/bin/
-**/obj/
-*.db
-docker-compose.*.yml
-
-launch.json
-tasks.json
-
+# ==== Configurações sensíveis ====
+appsettings.Development.json
+appsettings.Local.json
 /nginx/certs/*
+!nginx/certs/README.md  
+
+# ==== Docker ====
+**/docker-compose.*.yml
+!docker-compose.yml  
+**/Dockerfile.dev
+
+# ==== Banco de dados e migrações ====
+database/
+*.db
+*.mdf
+*.ldf
+
+# ==== Sistema ====
+.DS_Store
+Thumbs.db
+
+# ==== Dependências ====
+node_modules/
+.nuget/
+packages/
+
+# ==== Testes ====
+TestResults/
+*.trx
+
+# ==== Azure/DevOps ====
+.azure/
+*.pubxml

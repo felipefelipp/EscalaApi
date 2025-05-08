@@ -14,7 +14,7 @@ public class EscalaRepository : IEscalaRepository
     {
         var escala = new List<Data.Entities.Escala>();
 
-        await using var connection = DatabaseContext.GetConnection();
+        using var connection = DatabaseContext.GetConnection();
 
         const string queryResult = EscalaScripts.ObterEscala;
 
@@ -37,7 +37,7 @@ public class EscalaRepository : IEscalaRepository
     {
         const string insertResult = EscalaScripts.InserirEscala;
 
-        await using var connection = DatabaseContext.GetConnection();
+        using var connection = DatabaseContext.GetConnection();
 
         await connection.ExecuteAsync(insertResult, escalaDto);
     }

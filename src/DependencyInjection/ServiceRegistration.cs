@@ -3,13 +3,16 @@ using EscalaApi.Mappers;
 using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Services;
 using EscalaApi.Services.Interfaces;
+using EscalaApi.Data;
 
 namespace EscalaApi.DependencyInjection;
 
 public static class ServiceRegistration
 {
-    public static IServiceCollection AddProjectServices(this IServiceCollection services)
+    public static IServiceCollection AddProjectServices(this IServiceCollection services, IConfiguration configuration)
     {
+        DatabaseContext.Initialize(configuration);
+
         //Integrante
         services.AddScoped<IIntegranteService, IntegranteService>();
         services.AddScoped<IIntegranteRepository, IntegranteRepository>();
