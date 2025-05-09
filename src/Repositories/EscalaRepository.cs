@@ -26,7 +26,7 @@ public class EscalaRepository : IEscalaRepository
             {
                 Data = escalaDto.Data.Value,
                 TipoEscala = (TipoEscala)escalaDto.TipoEscala,
-                Integrante = new Integrante(escalaDto.IdIntegrante.Value)
+                Integrante = new Integrante(escalaDto.IdIntegrante.Value, escalaDto.Nome),
             });
         }
 
