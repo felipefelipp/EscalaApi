@@ -1,7 +1,10 @@
 namespace EscalaApi.Data.DTOs;
 
-public record EscalaDto(int? IdIntegrante, DateTime? Data, int TipoEscala)
+public class EscalaDto
 {
-    public EscalaDto() : this(null, null, 0) { }
-    public EscalaDto(string Nome): this(null, null, 0) { }
-};
+    public int? IdIntegrante { get; set; }
+    public DateTime? Data { get; set; }
+    public int TipoEscala { get; set; }
+    
+    public string Nome { get; set; }
+}

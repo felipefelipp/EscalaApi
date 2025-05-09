@@ -18,6 +18,12 @@ public class Integrante
     {
         IdIntegrante = idIntegrante;
     }
+    
+    public Integrante(int idIntegrante, string nome)
+    {
+        IdIntegrante = idIntegrante;
+        Nome = nome;
+    }
 
     public Integrante(int idIntegrante, string nome, List<DayOfWeek> diasDisponiveis, List<TipoIntegrante> tipoIntegrante)
     {
