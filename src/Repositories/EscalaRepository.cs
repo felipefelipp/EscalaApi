@@ -1,8 +1,10 @@
+using System.Data;
 using Dapper;
 using EscalaApi.Data;
 using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
 using EscalaApi.Data.Scripts;
+using EscalaApi.Mappers;
 using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Utils.Enums;
 
@@ -10,35 +12,79 @@ namespace EscalaApi.Repositories;
 
 public class EscalaRepository : IEscalaRepository
 {
-    public async Task<List<Data.Entities.Escala>> ObterEscalas()
+    public async Task<List<EscalaDto>> ObterEscalas()
     {
-        var escala = new List<Data.Entities.Escala>();
-
         using var connection = DatabaseContext.GetConnection();
 
-        const string queryResult = EscalaScripts.ObterEscala;
-
-        var result = await connection.QueryAsync<EscalaDto>(queryResult);
-
-        foreach (var escalaDto in result)
+        try
         {
-            escala.Add(new Data.Entities.Escala()
-            {
-                Data = escalaDto.Data.Value,
-                TipoEscala = (TipoEscala)escalaDto.TipoEscala,
-                Integrante = new Integrante(escalaDto.IdIntegrante.Value, escalaDto.Nome),
-            });
-        }
+            const string query = EscalaScripts.ObterEscala;
 
-        return escala;
+            var result = await connection.QueryAsync<EscalaDto>(query);
+
+            return result.ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Erro ao obter escalas: {ex.Message}", ex);
+        }
+    }
+
+    public async Task<EscalaDto> ObterEscalaPorId(int idEscala)
+    {
+        using var connection = DatabaseContext.GetConnection();
+
+        try
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@IdEscala", idEscala, DbType.Int32);
+
+            const string query = EscalaScripts.ObterEscalaPorId;
+
+            var result = await connection.QueryAsync<EscalaDto>(query, parameters);
+
+            return result.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Erro ao obter escala: {ex.Message}", ex);
+        }
     }
 
     public async Task InserirEscala(List<EscalaDto> escalaDto)
     {
-        const string insertResult = EscalaScripts.InserirEscala;
+        using var connection = DatabaseContext.GetConnection();
+        try
+        {
+            const string query = EscalaScripts.InserirEscala;
+            await connection.ExecuteAsync(query, escalaDto);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Erro ao inserir escala: {ex.Message}", ex);
+        }
+    }
 
+    public async Task<bool> AtualizarEscala(int idEscala, EscalaDto escalaDto)
+    {
         using var connection = DatabaseContext.GetConnection();
 
-        await connection.ExecuteAsync(insertResult, escalaDto);
+        try
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@IdIntegrante", escalaDto.IdIntegrante, DbType.Int32);
+            parameters.Add("@Data", escalaDto.Data, DbType.DateTime);
+            parameters.Add("@TipoEscala", escalaDto.TipoEscala, DbType.Int32);
+            parameters.Add("@IdEscala", idEscala, DbType.Int32);
+
+            const string query = EscalaScripts.AtualizarEscala;
+            int linhasAfetadas = await connection.ExecuteAsync(query, parameters);
+
+            return linhasAfetadas > 0;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Erro ao atualizar escala: {ex.Message}", ex);
+        }
     }
 }
