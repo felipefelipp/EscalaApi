@@ -12,4 +12,20 @@ public class EscalaScripts
                                         FROM Escalas
                                             INNER JOIN Integrantes ON Escalas.id_integrante = Integrantes.id_integrante
                                         ORDER BY Escalas.dt_data_escala ASC";
+    
+    public const string ObterEscalaPorId = @"SELECT Escalas.id_integrante IdIntegrante, 
+                                               Escalas.dt_data_escala Data,  
+                                               Escalas.tipo_escala TipoEscala,
+                                               Integrantes.nome Nome
+                                        FROM Escalas
+                                            INNER JOIN Integrantes ON Escalas.id_integrante = Integrantes.id_integrante
+                                        WHERE Escalas.id_escala = @IdEscala
+                                        ORDER BY Escalas.dt_data_escala ASC";
+
+    public const string AtualizarEscala = @"UPDATE Escalas
+                                        SET id_integrante = @IdEscala,
+                                            dt_data_escala = @Data,
+                                            tipo_escala = @TipoEscala,
+                                        WHERE id_escala = @IdEscala
+                                        SELECT @@ROWCOUNT AS LinhasAfetadas;";
 }

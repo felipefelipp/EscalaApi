@@ -4,6 +4,8 @@ namespace EscalaApi.Repositories.Interfaces;
 
 public interface IEscalaRepository
 {
-    Task<List<Data.Entities.Escala>> ObterEscalas();
-    Task InserirEscala(List<EscalaDto> escala);
+    Task<List<EscalaDto>> ObterEscalas();
+    Task<EscalaDto> ObterEscalaPorId(int idEscala);
+    Task InserirEscala(List<EscalaDto> escalaDto);
+    Task<bool> AtualizarEscala(int idEscala, EscalaDto escalaDto);
 }

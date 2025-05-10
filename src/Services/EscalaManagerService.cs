@@ -20,6 +20,22 @@ public class EscalaManager : IEscalaManagerService
         _escalaRepository = escalaRepository;
     }
 
+    public async Task<Result<Escala>> ObterEscalaPorId(int idEscala)
+    {
+        var erros = new List<Notification>();
+        var escaladto = await _escalaRepository.ObterEscalaPorId(idEscala);
+        
+        if (escaladto == null)
+        {
+            erros.Add(new Notification(null, $"Escala não encontrada."));
+            return Result<Escala>.NotFound(erros);
+        }
+        
+        var escala = escaladto.ParaEscala();
+
+        return Result<Escala>.Ok(escala);
+    }
+
     public async Task<Result<List<Escala>>> CriarEscala(EscalaIntegrantes escala)
     {
         var escalaIntegrantes = new List<Escala>();
@@ -38,7 +54,7 @@ public class EscalaManager : IEscalaManagerService
         if (erros.Any())
             return Result<List<Escala>>.BadRequest(erros);
         
-        var escalaDto = escalaIntegrantes.ParaListaDto();
+        var escalaDto = escalaIntegrantes.ParaListaEscalaDto();
         
         await _escalaRepository.InserirEscala(escalaDto);
         
@@ -47,9 +63,32 @@ public class EscalaManager : IEscalaManagerService
 
     public async Task<Result<List<Escala>>> ObterEscalas()
     {
-        var escalas = await _escalaRepository.ObterEscalas();
-
+        var escalasDto = await _escalaRepository.ObterEscalas();
+        var escalas = escalasDto.ParaListaEscala();
+        
         return Result<List<Escala>>.Ok(escalas);
+    }
+    
+    public async Task<Result<EscalaIntegrante>> EditarEscala(int id, EscalaIntegrante escala)
+    {
+        var erros = new List<Notification>();
+        var escaladto = await _escalaRepository.ObterEscalaPorId(id);
+        if (escaladto == null)
+        {
+            erros.Add(new Notification(null, $"Escala não encontrada."));
+            return Result<EscalaIntegrante>.NotFound(erros);
+        }
+        
+        escaladto.TipoEscala = (int) escala.TipoEscala;
+        escaladto.IdIntegrante = escala.idIntegrante;
+        escaladto.Data = escala.Data;
+        var escalaAtualizada = await _escalaRepository.AtualizarEscala(id, escaladto);
+        if(!escalaAtualizada)
+        {
+            erros.Add(new Notification(id.ToString(), $"Não foi possível atualizar a escala."));
+            return Result<EscalaIntegrante>.NotFound(erros);
+        }
+        return Result<EscalaIntegrante>.Ok(escala);
     }
 
     public static List<DiaSemana> ObterDiasEscala(DateTime dataInicio, DateTime dataFim, DayOfWeek diaDaSemana)
@@ -162,8 +201,9 @@ public class EscalaManager : IEscalaManagerService
         var random = new Random();
         bool primeiroDiaSelecionado = false;
 
-        var obterEscalas = await _escalaRepository.ObterEscalas();
-
+        var escalas = await _escalaRepository.ObterEscalas();
+        var obterEscalas = escalas.ParaListaEscala();
+        
         foreach (var dia in diasEscala)
         {
             var disponiveis = integrantes.Where(i => i.DiasDaSemanaDisponiveis.Contains(dia.DayOfWeek)).ToList();
