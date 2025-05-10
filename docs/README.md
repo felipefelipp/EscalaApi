@@ -1,6 +1,6 @@
 # 🎵 Gerenciador de Escalas Musicais - API
 
-[![.NET](https://img.shields.io/badge/.NET-7.0-%23512bd4)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-8.0-%23512bd4)](https://dotnet.microsoft.com/)
 [![Docker](https://img.shields.io/badge/Docker-✓-blue)](https://www.docker.com/)
 [![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-%23CC2927)](https://www.microsoft.com/sql-server)
 
