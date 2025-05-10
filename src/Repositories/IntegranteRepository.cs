@@ -32,9 +32,11 @@ public class IntegranteRepository : IIntegranteRepository
 
             if (result.Any())
             {
-                var diasDisponiveis = result.Where(r => r.DiaDisponivel != null).Select(r => (int)r.DiaDisponivel).Distinct().ToList();
-                var tiposIntegrante = result.Where(r => r.TipoIntegrante != null).Select(r => (int)r.TipoIntegrante).Distinct().ToList();
-            
+                var diasDisponiveis = result.Where(r => r.DiaDisponivel != null).Select(r => (int)r.DiaDisponivel)
+                    .Distinct().ToList();
+                var tiposIntegrante = result.Where(r => r.TipoIntegrante != null).Select(r => (int)r.TipoIntegrante)
+                    .Distinct().ToList();
+
                 var integrante = new IntegranteDto
                 {
                     IdIntegrante = idIntegrante,
@@ -75,8 +77,10 @@ public class IntegranteRepository : IIntegranteRepository
                 {
                     var idIntegrante = grupo.Key;
                     var nome = grupo.First().Nome;
-                    var diasDisponiveis = grupo.Where(r => r.DiaDisponivel != null).Select(g => (int)g.DiaDisponivel).ToList();
-                    var tiposIntegrante = grupo.Where(r => r.TipoIntegrante != null).Select(g => (int)g.TipoIntegrante).Distinct().ToList();
+                    var diasDisponiveis = grupo.Where(r => r.DiaDisponivel != null).Select(g => (int)g.DiaDisponivel)
+                        .ToList();
+                    var tiposIntegrante = grupo.Where(r => r.TipoIntegrante != null).Select(g => (int)g.TipoIntegrante)
+                        .Distinct().ToList();
 
                     if (tiposIntegrante.Contains((int)tipoIntegrante))
                     {
@@ -106,7 +110,6 @@ public class IntegranteRepository : IIntegranteRepository
     {
         try
         {
-            int totalCount;
             int offset = pageSize * (pageNumber - 1);
             var parameters = new
             {
@@ -120,41 +123,39 @@ public class IntegranteRepository : IIntegranteRepository
 
             using var multi = await connection.QueryMultipleAsync(query, parameters);
 
-            var result = await multi.ReadAsync();
-            var quantidade = await connection.QueryAsync(IntegranteScripts.QuantidadeIntegrantes);
-            var total = quantidade.FirstOrDefault();
-
-            totalCount = total != null ? Convert.ToInt32(((IDictionary<string, object>)total)["Total"]) : 0;
+            var result = await multi.ReadAsync<dynamic>();
+            var totalCount = await multi.ReadSingleAsync<int>();
 
             if (result.Any())
             {
-                var integrantesPorId = result.GroupBy(r => r.IdIntegrante);
+                var integrantesPorId = result.GroupBy(r => (int)r.IdIntegrante);
                 var integrantes = new List<Integrante>();
 
                 foreach (var grupo in integrantesPorId)
                 {
-                    var idIntegrante = grupo.Key;
-                    var nome = grupo.First().Nome;
-                    var diasDisponiveis = grupo.Where(r => r.DiaDisponivel != null).Select(g => (int)g.DiaDisponivel).ToList();
-                    var tiposIntegrante = grupo.Where(r => r.TipoIntegrante != null).Select(g => (int)g.TipoIntegrante).Distinct().ToList();
-
+                    var firstRecord = grupo.First();
                     var integrante = new IntegranteDto
                     {
-                        IdIntegrante = (int)idIntegrante,
-                        Nome = (string)nome,
-                        DiasDaSemanaDisponiveis = diasDisponiveis,
-                        TipoIntegrante = tiposIntegrante,
+                        IdIntegrante = (int)firstRecord.IdIntegrante,
+                        Nome = (string)firstRecord.Nome,
+                        DiasDaSemanaDisponiveis = grupo
+                            .Where(r => r.DiaDisponivel != null)
+                            .Select(g => (int)g.DiaDisponivel)
+                            .ToList(),
+                        TipoIntegrante = grupo
+                            .Where(r => r.TipoIntegrante != null)
+                            .Select(g => (int)g.TipoIntegrante)
+                            .Distinct()
+                            .ToList(),
                     };
 
                     integrantes.Add(integrante.ParaIntegrante());
                 }
 
-                var integrantesDto = new IntegrantesResultDto(integrantes, totalCount);
-
-                return integrantesDto;
+                return new IntegrantesResultDto(integrantes, totalCount);
             }
 
-            return new IntegrantesResultDto();
+            return new IntegrantesResultDto(new List<Integrante>(), 0);
         }
         catch (Exception ex)
         {
@@ -200,7 +201,7 @@ public class IntegranteRepository : IIntegranteRepository
             throw new Exception($"Erro ao inserir integrante: {ex.Message}", ex);
         }
     }
-    
+
     public async Task<bool> RemoverIntegrante(int idIntegrante)
     {
         try

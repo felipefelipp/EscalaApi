@@ -29,17 +29,19 @@ public static class IntegranteScripts
 
     public const string ObterTodosOsIntegrantes = @"
             SELECT 
-                 Integrantes.id_integrante AS IdIntegrante,
-                 Integrantes.nome AS Nome, 
-                 Integrantes_dias_disponiveis.dia_disponivel AS DiaDisponivel, 
-                 Tipo_integrante.tipo_integrante AS TipoIntegrante
-             FROM Integrantes
-             LEFT JOIN Integrantes_dias_disponiveis
-                 ON Integrantes.id_integrante = Integrantes_dias_disponiveis.id_integrante
-             LEFT JOIN Tipo_integrante
-                 ON Integrantes.id_integrante = Tipo_integrante.id_integrante 
-             ORDER BY Integrantes.id_integrante
-             LIMIT @PageSize OFFSET @Offset";
+                Integrantes.id_integrante AS IdIntegrante,
+                Integrantes.nome AS Nome, 
+                Integrantes_dias_disponiveis.dia_disponivel AS DiaDisponivel, 
+                Tipo_integrante.tipo_integrante AS TipoIntegrante
+            FROM Integrantes
+            LEFT JOIN Integrantes_dias_disponiveis
+                ON Integrantes.id_integrante = Integrantes_dias_disponiveis.id_integrante
+            LEFT JOIN Tipo_integrante
+                ON Integrantes.id_integrante = Tipo_integrante.id_integrante 
+            ORDER BY Integrantes.id_integrante
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
+
+            SELECT COUNT(*) AS Total FROM Integrantes";
 
     public const string QuantidadeIntegrantes = @" 
                  SELECT COUNT(id_integrante) Total
