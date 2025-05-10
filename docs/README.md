@@ -13,7 +13,7 @@ API para gerenciamento de escalas, músicos e eventos para grupos musicais com D
 
 ```bash
 git clone https://github.com/felipefelipp/EscalaApi.git
-cd cd infra/docker
+cd infra/docker
 docker-compose up -d
 ```
 
