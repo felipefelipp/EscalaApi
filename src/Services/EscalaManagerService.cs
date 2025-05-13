@@ -122,71 +122,71 @@ public class EscalaManager : IEscalaManagerService
             switch (tipo)
             {
                 case TipoEscala.Ministro:
-                {
-                    var ministros = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Ministro);
-                    if (ministros == null || !ministros.Any())
-                        break;
+                    {
+                        var ministros = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Ministro);
+                        if (ministros == null || !ministros.Any())
+                            break;
 
-                    var escalaMinistro = await GerarEscala(ministros, escalaDia, TipoEscala.Ministro);
-                    escalaIntegrantes.AddRange(escalaMinistro);
-                    break;
-                }
+                        var escalaMinistro = await GerarEscala(ministros, escalaDia, TipoEscala.Ministro);
+                        escalaIntegrantes.AddRange(escalaMinistro);
+                        break;
+                    }
 
                 case TipoEscala.BackingVocal:
-                {
-                    var backingVocals =
-                        await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.BackingVocal);
-                    if (backingVocals == null || !backingVocals.Any())
-                        break;
+                    {
+                        var backingVocals =
+                            await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.BackingVocal);
+                        if (backingVocals == null || !backingVocals.Any())
+                            break;
 
-                    var escalaBackingVocal = await GerarEscala(backingVocals, escalaDia, TipoEscala.BackingVocal);
-                    escalaIntegrantes.AddRange(escalaBackingVocal);
-                    break;
-                }
+                        var escalaBackingVocal = await GerarEscala(backingVocals, escalaDia, TipoEscala.BackingVocal);
+                        escalaIntegrantes.AddRange(escalaBackingVocal);
+                        break;
+                    }
 
                 case TipoEscala.Teclado:
-                {
-                    var tecladistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Teclado);
-                    if (tecladistas == null || !tecladistas.Any())
-                        break;
+                    {
+                        var tecladistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Teclado);
+                        if (tecladistas == null || !tecladistas.Any())
+                            break;
 
-                    var escalaTeclado = await GerarEscala(tecladistas, escalaDia, TipoEscala.Teclado);
-                    escalaIntegrantes.AddRange(escalaTeclado);
-                    break;
-                }
+                        var escalaTeclado = await GerarEscala(tecladistas, escalaDia, TipoEscala.Teclado);
+                        escalaIntegrantes.AddRange(escalaTeclado);
+                        break;
+                    }
 
                 case TipoEscala.Violao:
-                {
-                    var violonistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Violao);
-                    if (violonistas == null || !violonistas.Any())
-                        break;
+                    {
+                        var violonistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Violao);
+                        if (violonistas == null || !violonistas.Any())
+                            break;
 
-                    var escalaViolao = await GerarEscala(violonistas, escalaDia, TipoEscala.Violao);
-                    escalaIntegrantes.AddRange(escalaViolao);
-                    break;
-                }
+                        var escalaViolao = await GerarEscala(violonistas, escalaDia, TipoEscala.Violao);
+                        escalaIntegrantes.AddRange(escalaViolao);
+                        break;
+                    }
 
                 case TipoEscala.ContraBaixo:
-                {
-                    var baixistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.ContraBaixo);
-                    if (baixistas == null || !baixistas.Any())
-                        break;
+                    {
+                        var baixistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.ContraBaixo);
+                        if (baixistas == null || !baixistas.Any())
+                            break;
 
-                    var escalaBaixo = await GerarEscala(baixistas, escalaDia, TipoEscala.ContraBaixo);
-                    escalaIntegrantes.AddRange(escalaBaixo);
-                    break;
-                }
+                        var escalaBaixo = await GerarEscala(baixistas, escalaDia, TipoEscala.ContraBaixo);
+                        escalaIntegrantes.AddRange(escalaBaixo);
+                        break;
+                    }
 
                 case TipoEscala.Guitarra:
-                {
-                    var guitarristas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Guitarra);
-                    if (guitarristas == null || !guitarristas.Any())
-                        break;
+                    {
+                        var guitarristas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Guitarra);
+                        if (guitarristas == null || !guitarristas.Any())
+                            break;
 
-                    var escalaGuitarra = await GerarEscala(guitarristas, escalaDia, TipoEscala.Guitarra);
-                    escalaIntegrantes.AddRange(escalaGuitarra);
-                    break;
-                }
+                        var escalaGuitarra = await GerarEscala(guitarristas, escalaDia, TipoEscala.Guitarra);
+                        escalaIntegrantes.AddRange(escalaGuitarra);
+                        break;
+                    }
 
                 default:
                     erros.Add(new Notification("TipoIntegrante", $"Tipo {tipo} não reconhecido."));
@@ -215,6 +215,11 @@ public class EscalaManager : IEscalaManagerService
                 Console.WriteLine($"Nenhum integrante disponível para {dia.Data}.");
                 continue;
             }
+
+            var escalaExistente = escalasObtidas.Any(x => x.Data == dia.Data.Date && x.TipoEscala == tipoEscala);
+
+            if (escalaExistente)
+                continue;
 
             // Para o primeiro dia
             if (escalasObtidas.Count <= 0 && !primeiroDiaSelecionado)
