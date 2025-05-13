@@ -24,13 +24,13 @@ public class EscalaManager : IEscalaManagerService
     {
         var erros = new List<Notification>();
         var escaladto = await _escalaRepository.ObterEscalaPorId(idEscala);
-        
+
         if (escaladto == null)
         {
             erros.Add(new Notification(null, $"Escala não encontrada."));
             return Result<Escala>.NotFound(erros);
         }
-        
+
         var escala = escaladto.ParaEscala();
 
         return Result<Escala>.Ok(escala);
@@ -43,7 +43,7 @@ public class EscalaManager : IEscalaManagerService
 
         foreach (var dia in escala.DiasDaSemana)
         {
-            var DiasDaEscala = ObterDiasEscala(escala.DataInicio, escala.DataFim, dia);
+            var DiasDaEscala = ObterDiasEscala(escala.DataInicio.Date, escala.DataFim.Date, dia);
 
             if (escala.TipoEscala is not null)
             {
@@ -53,11 +53,11 @@ public class EscalaManager : IEscalaManagerService
 
         if (erros.Any())
             return Result<List<Escala>>.BadRequest(erros);
-        
+
         var escalaDto = escalaIntegrantes.ParaListaEscalaDto();
-        
+
         await _escalaRepository.InserirEscala(escalaDto);
-        
+
         return Result<List<Escala>>.Ok(escalaIntegrantes);
     }
 
@@ -65,10 +65,10 @@ public class EscalaManager : IEscalaManagerService
     {
         var escalasDto = await _escalaRepository.ObterEscalas();
         var escalas = escalasDto.ParaListaEscala();
-        
+
         return Result<List<Escala>>.Ok(escalas);
     }
-    
+
     public async Task<Result<EscalaIntegrante>> EditarEscala(int id, EscalaIntegrante escala)
     {
         var erros = new List<Notification>();
@@ -78,16 +78,17 @@ public class EscalaManager : IEscalaManagerService
             erros.Add(new Notification(null, $"Escala não encontrada."));
             return Result<EscalaIntegrante>.NotFound(erros);
         }
-        
-        escaladto.TipoEscala = (int) escala.TipoEscala;
+
+        escaladto.TipoEscala = (int)escala.TipoEscala;
         escaladto.IdIntegrante = escala.idIntegrante;
         escaladto.Data = escala.Data;
         var escalaAtualizada = await _escalaRepository.AtualizarEscala(id, escaladto);
-        if(!escalaAtualizada)
+        if (!escalaAtualizada)
         {
             erros.Add(new Notification(id.ToString(), $"Não foi possível atualizar a escala."));
             return Result<EscalaIntegrante>.NotFound(erros);
         }
+
         return Result<EscalaIntegrante>.Ok(escala);
     }
 
@@ -133,7 +134,8 @@ public class EscalaManager : IEscalaManagerService
 
                 case TipoEscala.BackingVocal:
                 {
-                    var backingVocals = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.BackingVocal);
+                    var backingVocals =
+                        await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.BackingVocal);
                     if (backingVocals == null || !backingVocals.Any())
                         break;
 
@@ -202,8 +204,8 @@ public class EscalaManager : IEscalaManagerService
         bool primeiroDiaSelecionado = false;
 
         var escalas = await _escalaRepository.ObterEscalas();
-        var obterEscalas = escalas.ParaListaEscala();
-        
+        var escalasObtidas = escalas.ParaListaEscala();
+
         foreach (var dia in diasEscala)
         {
             var disponiveis = integrantes.Where(i => i.DiasDaSemanaDisponiveis.Contains(dia.DayOfWeek)).ToList();
@@ -215,7 +217,7 @@ public class EscalaManager : IEscalaManagerService
             }
 
             // Para o primeiro dia
-            if (!primeiroDiaSelecionado)
+            if (escalasObtidas.Count <= 0 && !primeiroDiaSelecionado)
             {
                 integranteEscolhido = disponiveis[random.Next(disponiveis.Count)];
                 primeiroDiaSelecionado = true;
@@ -224,7 +226,7 @@ public class EscalaManager : IEscalaManagerService
             {
                 var contagemSelecoes = disponiveis.ToDictionary(
                     i => i,
-                    i => obterEscalas.Count(e =>
+                    i => escalasObtidas.Count(e =>
                         e.Integrante.IdIntegrante == i.IdIntegrante && e.TipoEscala == tipoEscala));
 
                 var minSelecoes = contagemSelecoes.Values.Min();

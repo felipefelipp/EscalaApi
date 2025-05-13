@@ -37,6 +37,9 @@ services:
     depends_on:
       sql-server:
         condition: service_healthy
+    labels:
+      - com.microsoft.vscode-devcontainers.name="Escala API"
+      - com.microsoft.vscode-devcontainers.description="Ambiente de desenvolvimento para a API Escala"
 
 volumes:
   sql-data:

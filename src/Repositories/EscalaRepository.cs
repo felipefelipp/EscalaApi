@@ -50,6 +50,28 @@ public class EscalaRepository : IEscalaRepository
             throw new Exception($"Erro ao obter escala: {ex.Message}", ex);
         }
     }
+    
+    // public async Task<EscalaDto> ObterEscalaPorData(DateTime dataInicio, DateTime dataFim)
+    // {
+    //     using var connection = DatabaseContext.GetConnection();
+
+    //     try
+    //     {
+    //         var parameters = new DynamicParameters();
+    //         parameters.Add("@IdEscala", idEscala, DbType.Int32);
+    //         parameters.Add("@IdEscala", idEscala, DbType.Int32);
+
+    //         const string query = EscalaScripts.ObterEscalaPorId;
+
+    //         var result = await connection.QueryAsync<EscalaDto>(query, parameters);
+
+    //         return result.FirstOrDefault();
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         throw new Exception($"Erro ao obter escala: {ex.Message}", ex);
+    //     }
+    // }
 
     public async Task InserirEscala(List<EscalaDto> escalaDto)
     {
