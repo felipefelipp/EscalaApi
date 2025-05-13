@@ -1,0 +1,35 @@
+{
+	"name": "Escala API Dev Container",
+	"dockerComposeFile": "../docker-compose.yml",
+	"service": "escala-api",
+	"workspaceFolder": "/app",
+	"shutdownAction": "stopCompose",
+	
+	// Configurações de extensões recomendadas
+	"customizations": {
+	  "vscode": {
+		"extensions": [
+		  "ms-dotnettools.csharp",
+		  "ms-azuretools.vscode-docker",
+		  "editorconfig.editorconfig"
+		]
+	  }
+	},
+	
+	// Configurações de encaminhamento de portas
+	"forwardPorts": [8080, 1433],
+	
+	// Configurações de contêiner
+	"containerEnv": {
+	  "ASPNETCORE_ENVIRONMENT": "Development"
+	},
+	
+	// Configurações pós-criação
+	"postCreateCommand": "dotnet restore",
+	
+	// Configurações de mounts
+	"mounts": [
+	  "source=${localWorkspaceFolder}/src,target=/app,type=bind,consistency=cached",
+	  "source=${localWorkspaceFolder}/db,target=/db,type=bind,consistency=cached"
+	]
+  }
