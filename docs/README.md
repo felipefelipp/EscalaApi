@@ -60,7 +60,7 @@ docker exec -it db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P escalaApi34
 
 ---
 
-Feito com ❤️ por Felipe - ✉️ [lipesantos.gtt@gmail.com](mailto:lipesantos.gtt@gmail.com)
+Feito por Felipe - ✉️ [lipesantos.gtt@gmail.com](mailto:lipesantos.gtt@gmail.com)
 ```
 
 Principais melhorias:
