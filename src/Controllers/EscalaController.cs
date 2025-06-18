@@ -80,7 +80,7 @@ public class EscalaController : ControllerBase
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> EditarEscala(int idEscala, EscalaIntegrante escala)
+    public async Task<IActionResult> EditarEscala(string id, int idEscala, EscalaIntegrante escala)
     {
         var retorno = await _escalaManagerService.EditarEscala(idEscala, escala);
 

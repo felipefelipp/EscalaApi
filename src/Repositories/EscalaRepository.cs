@@ -2,11 +2,8 @@ using System.Data;
 using Dapper;
 using EscalaApi.Data;
 using EscalaApi.Data.DTOs;
-using EscalaApi.Data.Entities;
 using EscalaApi.Data.Scripts;
-using EscalaApi.Mappers;
 using EscalaApi.Repositories.Interfaces;
-using EscalaApi.Utils.Enums;
 
 namespace EscalaApi.Repositories;
 

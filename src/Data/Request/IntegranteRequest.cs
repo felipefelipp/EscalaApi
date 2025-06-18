@@ -8,5 +8,5 @@ public class IntegranteRequest
 
     public List<DayOfWeek> DiasDaSemanaDisponiveis { get; set; }
 
-    public List<TipoIntegrante> TipoIntegrante { get; set; }
+    public List<int> TipoIntegrante { get; set; }
 }

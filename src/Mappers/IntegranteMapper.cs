@@ -57,7 +57,7 @@ public static class IntegranteMapper
     public static Integrante ParaIntegrante(this IntegranteDto integrante)
     {
         var diasDisponiveisDto = new List<DayOfWeek>();
-        var tipoIntegranteDto = new List<TipoIntegrante>();
+        var tipoIntegranteDto = new List<int>();
 
         foreach (var diaDisponivel in integrante.DiasDaSemanaDisponiveis)
         {
@@ -66,7 +66,7 @@ public static class IntegranteMapper
 
         foreach (var tipo in integrante.TipoIntegrante)
         {
-            tipoIntegranteDto.Add((TipoIntegrante)tipo);
+            tipoIntegranteDto.Add(tipo);
         }
 
         return new Integrante
@@ -81,16 +81,16 @@ public static class IntegranteMapper
     public static Integrante ParaIntegrante(this IntegranteRequest integrante)
     {
         var diasDisponiveisDto = new List<DayOfWeek>();
-        var tipoIntegranteDto = new List<TipoIntegrante>();
+        var tipoIntegranteDto = new List<int>();
 
         foreach (var diaDisponivel in integrante.DiasDaSemanaDisponiveis)
         {
-            diasDisponiveisDto.Add((DayOfWeek)diaDisponivel);
+            diasDisponiveisDto.Add(diaDisponivel);
         }
 
         foreach (var tipo in integrante.TipoIntegrante)
         {
-            tipoIntegranteDto.Add((TipoIntegrante)tipo);
+            tipoIntegranteDto.Add(tipo);
         }
 
         return new Integrante
