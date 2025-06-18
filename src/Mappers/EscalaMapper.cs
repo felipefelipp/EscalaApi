@@ -1,6 +1,5 @@
 using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
-using EscalaApi.Utils.Enums;
 
 namespace EscalaApi.Mappers;
 
@@ -35,7 +34,7 @@ public static class EscalaMapper
                     Nome = escala.Nome
                 },
                 Data = escala.Data.Value,
-                TipoEscala = (TipoEscala)escala.TipoEscala
+                TipoEscala = escala.TipoEscala
             });
         }
 
@@ -51,7 +50,7 @@ public static class EscalaMapper
                 Data = escala.Data,
                 TipoEscala = (int)escala.TipoEscala,
             };
-        
+
         return escalaDto;
     }
 
@@ -65,8 +64,25 @@ public static class EscalaMapper
                 Nome = escalaDto.Nome
             },
             Data = escalaDto.Data.Value,
-            TipoEscala = (TipoEscala)escalaDto.TipoEscala
+            TipoEscala = escalaDto.TipoEscala
         };
         return escala;
+    }
+
+    public static List<EscalaResultDto> ParaListaEscalaDto(this List<EscalaDto> escalasDto)
+    {
+        List<EscalaResultDto> escalas = new();
+        foreach (var escala in escalasDto)
+        {
+            escalas.Add(new EscalaResultDto
+            {
+                Data = escala.Data.Value,
+                IdIntegrante = escala.IdIntegrante.Value,
+                NomeIntegrante = escala.Nome,
+                CodigoTipoEscala = escala.TipoEscala,
+                DescricaoTipoEscala = escala.DescricaoTipoEscala
+            });
+        }
+        return escalas;
     }
 }

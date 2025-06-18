@@ -28,6 +28,9 @@ public static class ServiceRegistration
         
         //Dias disponiveis
         services.AddScoped<IIntegranteDiasDisponiveisRepository, IntegranteDiasDisponiveisRepository>();
+
+        //Tipo Escala
+        services.AddScoped<ITipoEscalaRepository, TipoEscalaRepository>();
         
         return services;
     }

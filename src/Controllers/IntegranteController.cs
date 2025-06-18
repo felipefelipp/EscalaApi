@@ -2,7 +2,6 @@ using System.Net;
 using EscalaApi.Data.Request;
 using EscalaApi.Services.Interfaces;
 using EscalaApi.Services.Models;
-using EscalaApi.Utils.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EscalaApi.Controllers;
@@ -16,26 +15,6 @@ public class IntegranteController : ControllerBase
     public IntegranteController(IIntegranteService integranteService)
     {
         _integranteService = integranteService;
-    }
-
-    [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ObterIntegrantePorId(int idIntegrante)
-    {
-        var retorno = await _integranteService.ObterIntegrantePorId(idIntegrante);
-
-        if (!retorno.Sucess)
-        {
-            if (retorno.StatusCode == HttpStatusCode.NotFound)
-                return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
-
-            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
-        }
-
-        return Ok(retorno);
     }
     
     [HttpGet("/Integrantes")]
@@ -79,7 +58,7 @@ public class IntegranteController : ControllerBase
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ObterIntegrantePorId([FromQuery] TipoIntegrante tipoIntegrante)
+    public async Task<IActionResult> ObterIntegrantePorId([FromQuery] int tipoIntegrante)
     {
         var retorno = await _integranteService.ObterIntegrantesPorTipo(tipoIntegrante);
 

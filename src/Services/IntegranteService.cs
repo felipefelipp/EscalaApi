@@ -5,7 +5,6 @@ using EscalaApi.Mappers;
 using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Services.Interfaces;
 using EscalaApi.Services.Results;
-using EscalaApi.Utils.Enums;
 using Flunt.Notifications;
 
 namespace EscalaApi.Services;
@@ -40,7 +39,7 @@ public class IntegranteService : IIntegranteService
         return Result<Integrante>.Ok(integrante);
     }
 
-    public async Task<Result<List<Integrante>>> ObterIntegrantesPorTipo(TipoIntegrante tipoIntegrante)
+    public async Task<Result<List<Integrante>>> ObterIntegrantesPorTipo(int tipoIntegrante)
     {
         var integrantes = await _integranteRepository.ObterIntegrantesPorTipo(tipoIntegrante);
 

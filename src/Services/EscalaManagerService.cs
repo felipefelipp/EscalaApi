@@ -4,7 +4,6 @@ using EscalaApi.Mappers;
 using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Services.Interfaces;
 using EscalaApi.Services.Results;
-using EscalaApi.Utils.Enums;
 using Flunt.Notifications;
 
 namespace EscalaApi.Services;
@@ -13,11 +12,15 @@ public class EscalaManager : IEscalaManagerService
 {
     public IIntegranteRepository _integranteRepository;
     public IEscalaRepository _escalaRepository;
+    public ITipoEscalaRepository _tipoEscalaRepository;
 
-    public EscalaManager(IIntegranteRepository integranteRepository, IEscalaRepository escalaRepository)
+    public EscalaManager(IIntegranteRepository integranteRepository,
+                         IEscalaRepository escalaRepository,
+                         ITipoEscalaRepository tipoEscalaRepository)
     {
         _integranteRepository = integranteRepository;
         _escalaRepository = escalaRepository;
+        _tipoEscalaRepository = tipoEscalaRepository;
     }
 
     public async Task<Result<Escala>> ObterEscalaPorId(int idEscala)
@@ -38,21 +41,20 @@ public class EscalaManager : IEscalaManagerService
 
     public async Task<Result<List<Escala>>> CriarEscala(EscalaIntegrantes escala)
     {
-        var escalaIntegrantes = new List<Escala>();
-        var erros = new List<Notification>();
+        List<Notification> erros = [];
+        List<Escala> escalaIntegrantes = [];
+
+        await ValidarErros(escala, erros);
+
+        if (erros.Count != 0)
+            return Result<List<Escala>>.BadRequest(erros);
 
         foreach (var dia in escala.DiasDaSemana)
         {
             var DiasDaEscala = ObterDiasEscala(escala.DataInicio.Date, escala.DataFim.Date, dia);
 
-            if (escala.TipoEscala is not null)
-            {
-                await ProcessarEscalas(escala.TipoEscala, DiasDaEscala, escalaIntegrantes, erros);
-            }
+            await ProcessarEscalas(escala.TipoEscala, DiasDaEscala, escalaIntegrantes);
         }
-
-        if (erros.Any())
-            return Result<List<Escala>>.BadRequest(erros);
 
         var escalaDto = escalaIntegrantes.ParaListaEscalaDto();
 
@@ -61,12 +63,71 @@ public class EscalaManager : IEscalaManagerService
         return Result<List<Escala>>.Ok(escalaIntegrantes);
     }
 
-    public async Task<Result<List<Escala>>> ObterEscalas()
+    private async Task ValidarErros(EscalaIntegrantes escala, List<Notification> erros)
+    {
+        if (escala.DataInicio == default || escala.DataFim == default)
+        {
+            erros.Add(new Notification("Data", "Data de início e fim são obrigatórias."));
+        }
+        if (escala.DataInicio > escala.DataFim)
+        {
+            erros.Add(new Notification("Data", "A data de início não pode ser maior que a data de fim."));
+        }
+        if (escala.TipoEscala == null || escala.TipoEscala.Count == 0)
+        {
+            erros.Add(new Notification("TipoEscala", "Pelo menos um tipo de escala deve ser selecionado."));
+        }
+        if (escala.DiasDaSemana == null || escala.DiasDaSemana.Count == 0)
+        {
+            erros.Add(new Notification("DiasDaSemana", "Pelo menos um dia da semana deve ser selecionado."));
+        }
+        if (escala.DiasDaSemana is null)
+        {
+            erros.Add(new Notification("DiasDaSemana", "Pelo menos um dia da semana deve ser selecionado."));
+        }
+        if (escala.DiasDaSemana!.Count > 7)
+        {
+            erros.Add(new Notification("DiasDaSemana", "Não é possível selecionar mais de 7 dias da semana."));
+        }
+        if (escala.DiasDaSemana.Distinct().Count() != escala.DiasDaSemana.Count)
+        {
+            erros.Add(new Notification("DiasDaSemana", "Dias da semana duplicados não são permitidos."));
+        }
+        if (escala.DataInicio > escala.DataFim)
+        {
+            erros.Add(new Notification("Data", "A data de início não pode ser maior que a data de fim."));
+        }
+        if (escala.DataInicio == escala.DataFim && escala.DiasDaSemana.Count > 1)
+        {
+            erros.Add(new Notification("DiasDaSemana", "Não é possível selecionar mais de um dia da semana para a mesma data."));
+        }
+        if (escala.DataInicio == escala.DataFim && escala.TipoEscala!.Count == 0)
+        {
+            erros.Add(new Notification("TipoEscala", "Pelo menos um tipo de escala deve ser selecionado para a mesma data."));
+        }
+        if (escala.DataInicio == escala.DataFim && escala.DiasDaSemana.Count == 0)
+        {
+            erros.Add(new Notification("DiasDaSemana", "Pelo menos um dia da semana deve ser selecionado para a mesma data."));
+        }
+        var tipoEscalasDisponiveis = await _tipoEscalaRepository.ObterTiposEscalaDisponiveis();
+
+        if (tipoEscalasDisponiveis == null || tipoEscalasDisponiveis.Count == 0)
+        {
+            erros.Add(new Notification("TipoEscala", "Nenhum tipo de escala disponível."));
+        }
+
+        if (escala.TipoEscala!.Any(tipo => !tipoEscalasDisponiveis!.Contains(tipo)))
+        {
+            erros.Add(new Notification("TipoEscala", "Um ou mais tipos de escala selecionados não estão disponíveis."));
+        }
+    }
+
+    public async Task<Result<List<EscalaResultDto>>> ObterEscalas()
     {
         var escalasDto = await _escalaRepository.ObterEscalas();
-        var escalas = escalasDto.ParaListaEscala();
+        var escalas = escalasDto.ParaListaEscalaDto();
 
-        return Result<List<Escala>>.Ok(escalas);
+        return Result<List<EscalaResultDto>>.Ok(escalas);
     }
 
     public async Task<Result<EscalaIntegrante>> EditarEscala(int id, EscalaIntegrante escala)
@@ -114,89 +175,25 @@ public class EscalaManager : IEscalaManagerService
         return diasEscala;
     }
 
-    private async Task ProcessarEscalas(List<TipoEscala> tipos, List<DiaSemana> escalaDia,
-        List<Escala> escalaIntegrantes, List<Notification> erros)
+    private async Task ProcessarEscalas(List<int> tipos,
+                                        List<DiaSemana> escalaDia,
+                                        List<Escala> escalaIntegrantes)
     {
         foreach (var tipo in tipos)
         {
-            switch (tipo)
-            {
-                case TipoEscala.Ministro:
-                    {
-                        var ministros = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Ministro);
-                        if (ministros == null || !ministros.Any())
-                            break;
+            var integrante = await _integranteRepository.ObterIntegrantesPorTipo(tipo);
+            if (integrante == null || integrante.Count == 0)
+                break;
 
-                        var escalaMinistro = await GerarEscala(ministros, escalaDia, TipoEscala.Ministro);
-                        escalaIntegrantes.AddRange(escalaMinistro);
-                        break;
-                    }
-
-                case TipoEscala.BackingVocal:
-                    {
-                        var backingVocals =
-                            await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.BackingVocal);
-                        if (backingVocals == null || !backingVocals.Any())
-                            break;
-
-                        var escalaBackingVocal = await GerarEscala(backingVocals, escalaDia, TipoEscala.BackingVocal);
-                        escalaIntegrantes.AddRange(escalaBackingVocal);
-                        break;
-                    }
-
-                case TipoEscala.Teclado:
-                    {
-                        var tecladistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Teclado);
-                        if (tecladistas == null || !tecladistas.Any())
-                            break;
-
-                        var escalaTeclado = await GerarEscala(tecladistas, escalaDia, TipoEscala.Teclado);
-                        escalaIntegrantes.AddRange(escalaTeclado);
-                        break;
-                    }
-
-                case TipoEscala.Violao:
-                    {
-                        var violonistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Violao);
-                        if (violonistas == null || !violonistas.Any())
-                            break;
-
-                        var escalaViolao = await GerarEscala(violonistas, escalaDia, TipoEscala.Violao);
-                        escalaIntegrantes.AddRange(escalaViolao);
-                        break;
-                    }
-
-                case TipoEscala.ContraBaixo:
-                    {
-                        var baixistas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.ContraBaixo);
-                        if (baixistas == null || !baixistas.Any())
-                            break;
-
-                        var escalaBaixo = await GerarEscala(baixistas, escalaDia, TipoEscala.ContraBaixo);
-                        escalaIntegrantes.AddRange(escalaBaixo);
-                        break;
-                    }
-
-                case TipoEscala.Guitarra:
-                    {
-                        var guitarristas = await _integranteRepository.ObterIntegrantesPorTipo(TipoIntegrante.Guitarra);
-                        if (guitarristas == null || !guitarristas.Any())
-                            break;
-
-                        var escalaGuitarra = await GerarEscala(guitarristas, escalaDia, TipoEscala.Guitarra);
-                        escalaIntegrantes.AddRange(escalaGuitarra);
-                        break;
-                    }
-
-                default:
-                    erros.Add(new Notification("TipoIntegrante", $"Tipo {tipo} não reconhecido."));
-                    break;
-            }
+            var escalaMinistro = await GerarEscala(integrante, escalaDia, tipo);
+            escalaIntegrantes.AddRange(escalaMinistro);
+            break;
         }
     }
 
-    private async Task<List<Escala>> GerarEscala(List<Integrante> integrantes, List<DiaSemana> diasEscala,
-        TipoEscala tipoEscala)
+    private async Task<List<Escala>> GerarEscala(List<Integrante> integrantes,
+                                                 List<DiaSemana> diasEscala,
+                                                 int tipoEscala)
     {
         var escala = new List<Escala>();
         Integrante integranteEscolhido;
@@ -209,14 +206,14 @@ public class EscalaManager : IEscalaManagerService
         foreach (var dia in diasEscala)
         {
             var disponiveis = integrantes.Where(i => i.DiasDaSemanaDisponiveis.Contains(dia.DayOfWeek)).ToList();
-
+        
             if (disponiveis.Count <= 0)
             {
                 Console.WriteLine($"Nenhum integrante disponível para {dia.Data}.");
                 continue;
             }
 
-            var escalaExistente = escalasObtidas.Any(x => x.Data == dia.Data.Date && x.TipoEscala == tipoEscala);
+            var escalaExistente = escalasObtidas.Any(x => x.Data.Date == dia.Data.Date && x.TipoEscala == tipoEscala);
 
             if (escalaExistente)
                 continue;
@@ -242,10 +239,9 @@ public class EscalaManager : IEscalaManagerService
                 integranteEscolhido = menosSelecionados[random.Next(menosSelecionados.Count)];
             }
 
-            escala.Add(new Data.Entities.Escala(
+            escala.Add(new Escala(
                 integranteEscolhido,
                 dia.Data,
-                dia.DayOfWeek,
                 tipoEscala));
         }
 

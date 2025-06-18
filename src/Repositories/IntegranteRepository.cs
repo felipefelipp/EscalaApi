@@ -55,11 +55,11 @@ public class IntegranteRepository : IIntegranteRepository
         }
     }
 
-    public async Task<List<Integrante>?> ObterIntegrantesPorTipo(TipoIntegrante tipoIntegrante)
+    public async Task<List<Integrante>?> ObterIntegrantesPorTipo(int tipoIntegrante)
     {
         try
         {
-            DynamicParameters parameters = new DynamicParameters();
+            DynamicParameters parameters = new();
             parameters.Add("@TipoIntegrante", tipoIntegrante);
 
             using var connection = DatabaseContext.GetConnection();

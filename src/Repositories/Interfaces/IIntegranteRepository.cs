@@ -7,7 +7,7 @@ namespace EscalaApi.Repositories.Interfaces;
 public interface IIntegranteRepository
 {
     Task<Integrante> ObterIntegrantePorId(int idIntegrante);
-    Task<List<Integrante>?> ObterIntegrantesPorTipo(TipoIntegrante tipoIntegrante);
+    Task<List<Integrante>?> ObterIntegrantesPorTipo(int tipoIntegrante);
     Task<int> InserirIntegrante(IntegranteDto integrante);
     Task<IntegrantesResultDto> ObterIntegrantes(int pageNumber, int pageSize);
     Task<bool> AtualizarIntegrante(IntegranteDto integrante);
