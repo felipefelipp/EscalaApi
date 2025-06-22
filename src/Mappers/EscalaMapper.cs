@@ -28,11 +28,10 @@ public static class EscalaMapper
         {
             escalas.Add(new Escala
             {
-                Integrante = new()
-                {
-                    IdIntegrante = escala.IdIntegrante.Value,
-                    Nome = escala.Nome
-                },
+                Integrante = new(
+                    escala.IdIntegrante.Value,
+                    escala.Nome
+                ),
                 Data = escala.Data.Value,
                 TipoEscala = escala.TipoEscala
             });
@@ -58,11 +57,10 @@ public static class EscalaMapper
     {
         Escala escala = new Escala
         {
-            Integrante = new()
-            {
-                IdIntegrante = escalaDto.IdIntegrante.Value,
-                Nome = escalaDto.Nome
-            },
+            Integrante = new(
+                escalaDto.IdIntegrante.Value,
+                escalaDto.Nome
+            ),
             Data = escalaDto.Data.Value,
             TipoEscala = escalaDto.TipoEscala
         };
@@ -76,6 +74,7 @@ public static class EscalaMapper
         {
             escalas.Add(new EscalaResultDto
             {
+                IdEscala = escala.IdEscala,
                 Data = escala.Data.Value,
                 IdIntegrante = escala.IdIntegrante.Value,
                 NomeIntegrante = escala.Nome,

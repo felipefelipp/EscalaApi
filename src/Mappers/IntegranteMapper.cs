@@ -1,103 +1,101 @@
 using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
 using EscalaApi.Data.Request;
-using EscalaApi.Utils.Enums;
 
 namespace EscalaApi.Mappers;
 
 public static class IntegranteMapper
 {
-    public static IntegranteDto ParaDto(this Integrante integrante)
+    public static Integrante ParaIntegrante(this List<IntegranteDto> integrantesDto)
     {
-        var diasDisponiveisDto = new List<int>();
-        var tipoIntegranteDto = new List<int>();
-
-        foreach (var diaDisponivel in integrante.DiasDaSemanaDisponiveis)
-        {
-            diasDisponiveisDto.Add((int)diaDisponivel);
-        }
-
-        foreach (var tipo in integrante.TipoIntegrante)
-        {
-            tipoIntegranteDto.Add((int)tipo);
-        }
-
-        return new IntegranteDto
-        {
-            IdIntegrante = integrante.IdIntegrante,
-            Nome = integrante.Nome,
-            DiasDaSemanaDisponiveis = diasDisponiveisDto,
-            TipoIntegrante = tipoIntegranteDto
-        };
+        return integrantesDto
+            .GroupBy(i => i.IdIntegrante)
+            .Select(grupo =>
+                new Integrante(grupo.Key ?? 0,
+                    grupo.First().Nome ?? "",
+                    grupo
+                        .Select(i => (DayOfWeek)i.DiaDaSemanaDisponivel)
+                        .Distinct()
+                        .ToList(),
+                    grupo
+                        .Select(i => i.TipoIntegrante)
+                        .Distinct()
+                        .ToList())
+            ).FirstOrDefault() ?? new Integrante();
     }
-    
-    public static IntegranteDto ParaDto(this IntegranteRequest integrante)
+
+    public static List<Integrante> ParaIntegrantes(this List<IntegranteDto> integrantesDto)
     {
-        var diasDisponiveisDto = new List<int>();
-        var tipoIntegranteDto = new List<int>();
+        var integrantes = integrantesDto
+            .GroupBy(i => i.IdIntegrante)
+            .Select(grupo =>
+                new Integrante(
+                    grupo.Key ?? 0,
+                    grupo.First().Nome ?? "",
+                    grupo
+                        .Select(i => (DayOfWeek)i.DiaDaSemanaDisponivel)
+                        .Distinct()
+                        .ToList(),
+                    grupo
+                        .Select(i => i.TipoIntegrante)
+                        .Distinct()
+                        .ToList()
+            )).ToList();
 
-        foreach (var diaDisponivel in integrante.DiasDaSemanaDisponiveis)
-        {
-            diasDisponiveisDto.Add((int)diaDisponivel);
-        }
-
-        foreach (var tipo in integrante.TipoIntegrante)
-        {
-            tipoIntegranteDto.Add((int)tipo);
-        }
-
-        return new IntegranteDto
-        {
-            Nome = integrante.Nome,
-            DiasDaSemanaDisponiveis = diasDisponiveisDto,
-            TipoIntegrante = tipoIntegranteDto
-        };
+        return integrantes;
     }
-    
-    public static Integrante ParaIntegrante(this IntegranteDto integrante)
+
+    public static List<IntegranteDto> ParaDtos(this Integrante integrante)
     {
-        var diasDisponiveisDto = new List<DayOfWeek>();
-        var tipoIntegranteDto = new List<int>();
+        var dtos = new List<IntegranteDto>();
 
-        foreach (var diaDisponivel in integrante.DiasDaSemanaDisponiveis)
+        foreach (var dia in integrante.DiasDaSemanaDisponiveis)
         {
-            diasDisponiveisDto.Add((DayOfWeek)diaDisponivel);
+            foreach (var tipo in integrante.TipoIntegrante)
+            {
+                dtos.Add(new IntegranteDto
+                {
+                    IdIntegrante = integrante.IdIntegrante,
+                    Nome = integrante.Nome,
+                    DiaDaSemanaDisponivel = (int)dia,
+                    TipoIntegrante = tipo
+                });
+            }
         }
 
-        foreach (var tipo in integrante.TipoIntegrante)
-        {
-            tipoIntegranteDto.Add(tipo);
-        }
-
-        return new Integrante
-        {
-            IdIntegrante = integrante.IdIntegrante.Value,
-            Nome = integrante.Nome,
-            DiasDaSemanaDisponiveis = diasDisponiveisDto,
-            TipoIntegrante = tipoIntegranteDto
-        };
+        return dtos;
     }
-    
-    public static Integrante ParaIntegrante(this IntegranteRequest integrante)
+
+    public static List<IntegranteDto> ParaDtos(this List<Integrante> integrantes)
     {
-        var diasDisponiveisDto = new List<DayOfWeek>();
-        var tipoIntegranteDto = new List<int>();
+        var dtos = new List<IntegranteDto>();
+
+        foreach (var integrante in integrantes)
+        {
+            dtos.AddRange(integrante.ParaDtos());
+        }
+
+        return dtos;
+    }
+
+    public static Integrante ParaIntegrante(this IntegranteRequest integrante, int idIntegrante)
+    {
+        var diasDisponiveis = new List<DayOfWeek>();
+        var tipoIntegrante = new List<int>();
 
         foreach (var diaDisponivel in integrante.DiasDaSemanaDisponiveis)
         {
-            diasDisponiveisDto.Add(diaDisponivel);
+            diasDisponiveis.Add(diaDisponivel);
         }
 
         foreach (var tipo in integrante.TipoIntegrante)
         {
-            tipoIntegranteDto.Add(tipo);
+            tipoIntegrante.Add(tipo);
         }
 
-        return new Integrante
-        {
-            Nome = integrante.Nome,
-            DiasDaSemanaDisponiveis = diasDisponiveisDto,
-            TipoIntegrante = tipoIntegranteDto
-        };
+        return new Integrante(idIntegrante,
+                              integrante.Nome,
+                              diasDisponiveis,
+                              tipoIntegrante);
     }
 }

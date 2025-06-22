@@ -9,7 +9,7 @@ namespace EscalaApi.Repositories;
 
 public class IntegranteDiasDisponiveisRepository : IIntegranteDiasDisponiveisRepository
 {
-    public async Task<bool> InserirDiasDisponiveis(IntegranteDto diasDisponiveisDto)
+    public async Task<bool> InserirDiasDisponiveis(List<IntegranteDto> diasDisponiveisDto)
     {
         try
         {
@@ -17,28 +17,28 @@ public class IntegranteDiasDisponiveisRepository : IIntegranteDiasDisponiveisRep
             const string insertResult = IntegranteDiasDisponiveisScripts.InserirIntegranteDiasDisponiveis;
             DynamicParameters parametrosInsercao = new DynamicParameters();
 
-            foreach (var dia in diasDisponiveisDto.DiasDaSemanaDisponiveis)
+            foreach (var diaDisponivel in diasDisponiveisDto)
             {
-                parametrosInsercao.Add("@IdIntegrante", diasDisponiveisDto.IdIntegrante, DbType.Int32);
-                parametrosInsercao.Add("@DiaDisponivel", dia, DbType.Int32);
+                parametrosInsercao.Add("@IdIntegrante", diasDisponiveisDto.First().IdIntegrante, DbType.Int32);
+                parametrosInsercao.Add("@DiaDisponivel", diaDisponivel.DiaDaSemanaDisponivel, DbType.Int32);
                 await connection.ExecuteAsync(insertResult, parametrosInsercao);
             }
 
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }
     }
 
-    public async Task<bool> AtualizarDiasDisponiveis(IntegranteDto diasDisponiveisDto)
+    public async Task<bool> AtualizarDiasDisponiveis(List<IntegranteDto> diasDisponiveisDto)
     {
         try
         {
             using var connection = DatabaseContext.GetConnection();
             DynamicParameters parameters = new DynamicParameters();
-            parameters.Add("@IdIntegrante", diasDisponiveisDto.IdIntegrante, DbType.Int32);
+            parameters.Add("@IdIntegrante", diasDisponiveisDto.First().IdIntegrante, DbType.Int32);
 
             const string removeResult = IntegranteDiasDisponiveisScripts.RemoverIntegranteDiasDisponiveis;
             await connection.ExecuteAsync(removeResult, parameters);
@@ -46,16 +46,16 @@ public class IntegranteDiasDisponiveisRepository : IIntegranteDiasDisponiveisRep
             const string insertResult = IntegranteDiasDisponiveisScripts.InserirIntegranteDiasDisponiveis;
             DynamicParameters parametrosInsercao = new DynamicParameters();
 
-            foreach (var dia in diasDisponiveisDto.DiasDaSemanaDisponiveis)
+            foreach (var diaDisponivel in diasDisponiveisDto)
             {
-                parametrosInsercao.Add("@IdIntegrante", diasDisponiveisDto.IdIntegrante, DbType.Int32);
-                parametrosInsercao.Add("@DiaDisponivel", dia, DbType.Int32);
+                parametrosInsercao.Add("@IdIntegrante", diasDisponiveisDto.First().IdIntegrante, DbType.Int32);
+                parametrosInsercao.Add("@DiaDisponivel", diaDisponivel.DiaDaSemanaDisponivel, DbType.Int32);
                 await connection.ExecuteAsync(insertResult, parametrosInsercao);
             }
 
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }
@@ -74,7 +74,7 @@ public class IntegranteDiasDisponiveisRepository : IIntegranteDiasDisponiveisRep
 
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }

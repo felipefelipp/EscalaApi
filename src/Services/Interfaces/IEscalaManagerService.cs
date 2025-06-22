@@ -8,6 +8,6 @@ public interface IEscalaManagerService
 {
     Task<Result<Escala>> ObterEscalaPorId(int idEscala);
     Task<Result<List<Escala>>> CriarEscala(EscalaIntegrantes escala);
-    Task<Result<List<EscalaResultDto>>> ObterEscalas();
+    Task<Result<List<EscalaResultDto>>> ObterEscalas(EscalaFiltro escalaFiltro);
     Task<Result<EscalaIntegrante>> EditarEscala(int id, EscalaIntegrante escala);
 }

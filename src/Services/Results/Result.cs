@@ -3,58 +3,58 @@ using Flunt.Notifications;
 
 namespace EscalaApi.Services.Results;
 
-public class Result : Notifiable<Notification>
-{
-    public bool Sucess { get { return !Notifications.Any(); } }
-    public HttpStatusCode StatusCode { get; private set; }
+// public class Result : Notifiable<Notification>
+// {
+//     public bool Sucess { get { return !Notifications.Any(); } }
+//     public HttpStatusCode StatusCode { get; private set; }
 
-    protected Result(IReadOnlyCollection<Notification> notifications, HttpStatusCode statusCode)
-    {
-        StatusCode = statusCode;
-        AddNotifications(notifications);
-    }
+//     protected Result(IReadOnlyCollection<Notification> notifications, HttpStatusCode statusCode)
+//     {
+//         StatusCode = statusCode;
+//         AddNotifications(notifications);
+//     }
 
-    protected Result(HttpStatusCode statusCode)
-    {
-        StatusCode = statusCode;
-    }
+//     protected Result(HttpStatusCode statusCode)
+//     {
+//         StatusCode = statusCode;
+//     }
 
-    protected Result()
-    {
-    }
+//     protected Result()
+//     {
+//     }
 
-    public static Result Ok()
-    {
-        return new Result(HttpStatusCode.OK);
-    }
+//     public static Result Ok()
+//     {
+//         return new Result(HttpStatusCode.OK);
+//     }
 
-    public static Result NoContent()
-    {
-        return new Result(HttpStatusCode.NoContent);
-    }
+//     public static Result NoContent()
+//     {
+//         return new Result(HttpStatusCode.NoContent);
+//     }
 
-    public static Result Created()
-    {
-        return new Result(HttpStatusCode.Created);
-    }
+//     public static Result Created()
+//     {
+//         return new Result(HttpStatusCode.Created);
+//     }
 
-    public static Result Accepted()
-    {
-        return new Result(HttpStatusCode.Accepted);
-    }
+//     public static Result Accepted()
+//     {
+//         return new Result(HttpStatusCode.Accepted);
+//     }
 
-    public static Result BadRequest(IReadOnlyCollection<Notification> notifications)
-    {
-        return new Result(notifications, HttpStatusCode.BadRequest);
-    }
+//     public static Result BadRequest(IReadOnlyCollection<Notification> notifications)
+//     {
+//         return new Result(notifications, HttpStatusCode.BadRequest);
+//     }
 
-    public static Result NotFound(IReadOnlyCollection<Notification> notifications)
-    {
-        return new Result(notifications, HttpStatusCode.NotFound);
-    }
-}
+//     public static Result NotFound(IReadOnlyCollection<Notification> notifications)
+//     {
+//         return new Result(notifications, HttpStatusCode.NotFound);
+//     }
+// }
 
-public class Result<T> : Notifiable<Notification> where T : class
+public class Result<T> : Notifiable<Notification> //where T : class
 {
     public bool Sucess { get { return !Notifications.Any(); } }
     public T? Object { get; }
@@ -68,7 +68,7 @@ public class Result<T> : Notifiable<Notification> where T : class
 
     private Result(IReadOnlyCollection<Notification> notifications, HttpStatusCode statusCode)
     {
-        Object = null;
+        Object = default;
         StatusCode = statusCode;
         AddNotifications(notifications);
     }
@@ -82,6 +82,12 @@ public class Result<T> : Notifiable<Notification> where T : class
     {
         return new Result<T>(obj, HttpStatusCode.Created);
     }
+
+    public static Result<T> NoContent()
+    {
+        return new Result<T>(new List<Notification>(), HttpStatusCode.Created);
+    }
+
 
     public static Result<T> NotFound(IReadOnlyCollection<Notification> notifications)
     {
@@ -98,3 +104,4 @@ public class Result<T> : Notifiable<Notification> where T : class
         return new Result<T>(notifications, HttpStatusCode.InternalServerError);
     }
 }
+

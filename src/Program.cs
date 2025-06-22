@@ -7,7 +7,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProjectServices(builder.Configuration);
 builder.Services.AddMappingServices();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+ .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
 
 
 

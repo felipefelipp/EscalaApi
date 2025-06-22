@@ -12,51 +12,52 @@ public class TipoIntegranteRepository : ITipoIntegranteRepository
     public TipoIntegranteRepository()
     {
     }
-    public async Task<bool> InserirTipoIntegrante(IntegranteDto tipoIntegranteDto)
+    public async Task<bool> InserirTipoIntegrante(List<IntegranteDto> tipoIntegranteDto)
     {
         try
         {
-        using var connection = DatabaseContext.GetConnection();
+            using var connection = DatabaseContext.GetConnection();
             const string insertResult = TipoIntegranteScripts.InserirTipoIntegrante;
-            foreach (var tipo in tipoIntegranteDto.TipoIntegrante)
+            foreach (var tipo in tipoIntegranteDto)
             {
                 DynamicParameters parametrosInsercao = new DynamicParameters();
-                parametrosInsercao.Add("@IdIntegrante", tipoIntegranteDto.IdIntegrante, DbType.Int32);
-                parametrosInsercao.Add("@TipoIntegrante", tipo, DbType.Int32);
+                parametrosInsercao.Add("@IdIntegrante", tipoIntegranteDto.First().IdIntegrante, DbType.Int32);
+                parametrosInsercao.Add("@TipoIntegrante", tipo.TipoIntegrante, DbType.Int32);
                 await connection.ExecuteAsync(insertResult, parametrosInsercao);
             }
 
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }
     }
 
-    public async Task<bool> AtualizarTipoIntegrante(IntegranteDto tipoIntegrante)
+    public async Task<bool> AtualizarTipoIntegrante(List<IntegranteDto> tipoIntegrante)
     {
         try
         {
             using var connection = DatabaseContext.GetConnection();
             DynamicParameters parametrosRemocao = new DynamicParameters();
-            parametrosRemocao.Add("@IdIntegrante", tipoIntegrante.IdIntegrante, DbType.Int32);
+            parametrosRemocao.Add("@IdIntegrante", tipoIntegrante.First().IdIntegrante, DbType.Int32);
 
             const string removeResult = TipoIntegranteScripts.ExcluirTipoIntegrante;
             await connection.ExecuteAsync(removeResult, parametrosRemocao);
 
             const string insertResult = TipoIntegranteScripts.InserirTipoIntegrante;
-            foreach (var tipo in tipoIntegrante.TipoIntegrante)
+
+            foreach (var tipo in tipoIntegrante)
             {
                 DynamicParameters parametrosInsercao = new DynamicParameters();
-                parametrosInsercao.Add("@IdIntegrante", tipoIntegrante.IdIntegrante, DbType.Int32);
-                parametrosInsercao.Add("@TipoIntegrante", tipo, DbType.Int32);
+                parametrosInsercao.Add("@IdIntegrante", tipoIntegrante.First().IdIntegrante, DbType.Int32);
+                parametrosInsercao.Add("@TipoIntegrante", tipo.TipoIntegrante, DbType.Int32);
                 await connection.ExecuteAsync(insertResult, parametrosInsercao);
             }
 
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }
@@ -75,7 +76,7 @@ public class TipoIntegranteRepository : ITipoIntegranteRepository
 
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }

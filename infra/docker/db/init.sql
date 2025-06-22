@@ -1,12 +1,7 @@
--- Cria o banco de dados se não existir
-IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = 'EscalaDb')
+IF DB_ID('EscalaDb') IS NULL
 BEGIN
     CREATE DATABASE EscalaDb;
     PRINT 'Banco de dados EscalaDb criado com sucesso.';
-END
-ELSE
-BEGIN
-    PRINT 'Banco de dados EscalaDb já existe.';
 END
 GO
 
@@ -14,71 +9,111 @@ GO
 USE EscalaDb;
 GO
 
--- Criação da tabela Escalas se não existir
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Escalas' AND type = 'U')
+-- Criação da tabela escalas se não existir
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'escalas' AND type = 'U')
 BEGIN
-    CREATE TABLE Escalas (
+    CREATE TABLE escalas (
         id_escala INT IDENTITY(1,1),
         id_integrante INT,
-        dt_data_escala NVARCHAR(50), -- Use DATE ou DATETIME2 para datas reais
-        tipo_escala INT,
+        dt_data_escala NVARCHAR(50), 
+        cd_tipo_escala INT,
         PRIMARY KEY(id_escala)
     );
-    PRINT 'Tabela Escalas criada com sucesso.';
+    PRINT 'Tabela escalas criada com sucesso.';
 END
 ELSE
 BEGIN
-    PRINT 'Tabela Escalas já existe.';
+    PRINT 'Tabela escalas já existe.';
 END
 GO
 
--- Criação da tabela Integrantes se não existir
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Integrantes' AND type = 'U')
+-- Criação da tabela integrantes se não existir
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'integrantes' AND type = 'U')
 BEGIN
-    CREATE TABLE Integrantes (
+    CREATE TABLE integrantes (
         id_integrante INT IDENTITY(1,1),
-        nome NVARCHAR(100), -- NVARCHAR é melhor para texto no SQL Server
+        desc_nome NVARCHAR(100), 
         PRIMARY KEY(id_integrante)
     );
-    PRINT 'Tabela Integrantes criada com sucesso.';
+    PRINT 'Tabela integrantes criada com sucesso.';
 END
 ELSE
 BEGIN
-    PRINT 'Tabela Integrantes já existe.';
+    PRINT 'Tabela integrantes já existe.';
 END
 GO
 
--- Criação da tabela Integrantes_dias_disponiveis se não existir
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Integrantes_dias_disponiveis' AND type = 'U')
+-- Criação da tabela integrantes_dias_disponiveis se não existir
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'integrantes_dias_disponiveis' AND type = 'U')
 BEGIN
-    CREATE TABLE Integrantes_dias_disponiveis (
+    CREATE TABLE integrantes_dias_disponiveis (
         id_integrante_dias_disponiveis INT IDENTITY(1,1),
         id_integrante INT,
-        dia_disponivel INT,
+        cd_dia_disponivel INT,
         PRIMARY KEY(id_integrante_dias_disponiveis)
     );
-    PRINT 'Tabela Integrantes_dias_disponiveis criada com sucesso.';
+    PRINT 'Tabela integrantes_dias_disponiveis criada com sucesso.';
 END
 ELSE
 BEGIN
-    PRINT 'Tabela Integrantes_dias_disponiveis já existe.';
+    PRINT 'Tabela integrantes_dias_disponiveis já existe.';
 END
 GO
 
--- Criação da tabela Tipo_integrante se não existir
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Tipo_integrante' AND type = 'U')
+-- Criação da tabela tipo_integrante se não existir
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'tipo_integrante' AND type = 'U')
 BEGIN
-    CREATE TABLE Tipo_integrante (
+    CREATE TABLE tipo_integrante (
         id_tipo_integrante INT IDENTITY(1,1),
         id_integrante INT,
-        tipo_integrante INT,
+        cd_tipo_integrante INT,
         PRIMARY KEY(id_tipo_integrante)
     );
-    PRINT 'Tabela Tipo_integrante criada com sucesso.';
+    PRINT 'Tabela tipo_integrante criada com sucesso.';
 END
 ELSE
 BEGIN
-    PRINT 'Tabela Tipo_integrante já existe.';
+    PRINT 'Tabela tipo_integrante já existe.';
+END
+GO
+
+-- Criação da tabela tipo_escala se não existir
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'tipo_escala' AND type = 'U')
+BEGIN
+    CREATE TABLE tipo_escala (
+	id_tipo_escala int IDENTITY(1,1) NOT NULL,
+	txt_descricao varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+    );
+    PRINT 'Tabela tipo_escala criada com sucesso.';
+END
+ELSE
+BEGIN
+    PRINT 'Tabela tipo_escala já existe.';
+END
+GO
+
+USE EscalaDb;
+
+IF (SELECT COUNT(*) FROM tipo_escala) = 0
+BEGIN
+    SET IDENTITY_INSERT tipo_escala ON;
+    INSERT INTO tipo_escala
+        (id_tipo_escala, txt_descricao)
+    VALUES
+        (1, 'Ministro'),
+        (2, 'BackingVocal'),
+        (3, 'BackingVocal2'),
+        (4, 'Teclado'),
+        (5, 'Violao'),
+        (6, 'ContraBaixo'),
+        (7, 'Guitarra'),
+        (8, 'Bateria');
+    SET IDENTITY_INSERT tipo_escala OFF;
+    PRINT 'valores de tipo_escala inseridos com sucesso.';
+END
+ELSE
+BEGIN
+    PRINT 'dados já existem.';
 END
 GO
 
