@@ -1,5 +1,4 @@
 using EscalaApi.Repositories;
-using EscalaApi.Mappers;
 using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Services;
 using EscalaApi.Services.Interfaces;
@@ -19,7 +18,7 @@ public static class ServiceRegistration
 
         
         //Escala
-        //services.AddScoped<IEscalaManagerService, EscalaManager>();
+        services.AddScoped<IEscalaManagerService, EscalaManager>();
         services.AddScoped<IEscalaRepository, EscalaRepository>();
 
         
@@ -33,10 +32,5 @@ public static class ServiceRegistration
         services.AddScoped<ITipoEscalaRepository, TipoEscalaRepository>();
         
         return services;
-    }
-
-    public static void AddMappingServices(this IServiceCollection services)
-    {
-       // services.AddAutoMapper(typeof(MappingProfile));
     }
 }
