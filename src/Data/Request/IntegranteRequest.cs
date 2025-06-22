@@ -1,12 +1,7 @@
-using EscalaApi.Utils.Enums;
+using EscalaApi.Data.Entities;
 
 namespace EscalaApi.Data.Request;
 
-public class IntegranteRequest
+public class IntegranteRequest : Integrante
 {
-    public string Nome { get; set; }
-
-    public List<DayOfWeek> DiasDaSemanaDisponiveis { get; set; }
-
-    public List<int> TipoIntegrante { get; set; }
 }

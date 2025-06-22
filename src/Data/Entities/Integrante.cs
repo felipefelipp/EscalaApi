@@ -2,7 +2,7 @@ namespace EscalaApi.Data.Entities;
 
 public class Integrante
 {
-    public int IdIntegrante { get; set; }
+    public int IdIntegrante { get; private set; }
     public string Nome { get; set; }
     public List<DayOfWeek> DiasDaSemanaDisponiveis { get; set; }
     public List<int> TipoIntegrante { get; set; }
@@ -15,7 +15,7 @@ public class Integrante
     {
         IdIntegrante = idIntegrante;
     }
-    
+
     public Integrante(int idIntegrante, string nome)
     {
         IdIntegrante = idIntegrante;
@@ -29,7 +29,7 @@ public class Integrante
         DiasDaSemanaDisponiveis = diasDisponiveis ?? new List<DayOfWeek>();
         TipoIntegrante = tipoIntegrante ?? new List<int>();
     }
-    
+
     public Integrante(string nome, List<DayOfWeek> diasDisponiveis, List<int> tipoIntegrante)
     {
         Nome = nome;

@@ -4,62 +4,61 @@ public static class IntegranteScripts
 {
     public const string ObterIntegrantePorIdScript = @"
              SELECT 
-                 Integrantes.nome AS Nome, 
-                 Integrantes_dias_disponiveis.dia_disponivel AS DiaDisponivel, 
-                 Tipo_integrante.tipo_integrante AS TipoIntegrante
-             FROM Integrantes
-             LEFT JOIN Integrantes_dias_disponiveis
-                 ON Integrantes.id_integrante = Integrantes_dias_disponiveis.id_integrante
-             LEFT JOIN Tipo_integrante
-                 ON Integrantes.id_integrante = Tipo_integrante.id_integrante 
-             WHERE Integrantes.id_integrante = @IdIntegrante";
+                integrantes.id_integrante AS IdIntegrante,
+                integrantes.desc_nome AS Nome, 
+                integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDisponivel, 
+                tipo_integrante.cd_tipo_integrante AS TipoIntegrante
+            FROM integrantes
+            LEFT JOIN integrantes_dias_disponiveis
+                ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
+            LEFT JOIN tipo_integrante
+                ON integrantes.id_integrante = tipo_integrante.id_integrante 
+             WHERE integrantes.id_integrante = @IdIntegrante";
 
-    public const string ObterIntegrantePorTipoScript = @"
+    public const string ObterIntegrantesPorTipoScript = @"
              SELECT 
-                 Integrantes.id_integrante AS IdIntegrante,
-                 Integrantes.nome AS Nome, 
-                 Integrantes_dias_disponiveis.dia_disponivel AS DiaDisponivel, 
-                 Tipo_integrante.tipo_integrante AS TipoIntegrante
-             FROM Integrantes
-             INNER JOIN Integrantes_dias_disponiveis
-                 ON Integrantes.id_integrante = Integrantes_dias_disponiveis.id_integrante
-             INNER JOIN Tipo_integrante
-                 ON Integrantes.id_integrante = Tipo_integrante.id_integrante 
-             WHERE Tipo_integrante.tipo_integrante = @TipoIntegrante";
+                integrantes.id_integrante AS IdIntegrante,
+                integrantes.desc_nome AS Nome, 
+                integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDisponivel, 
+                tipo_integrante.cd_tipo_integrante AS TipoIntegrante
+            FROM integrantes
+            LEFT JOIN integrantes_dias_disponiveis
+                ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
+            LEFT JOIN tipo_integrante
+                ON integrantes.id_integrante = tipo_integrante.id_integrante 
+             WHERE tipo_integrante.cd_tipo_integrante = @TipoIntegrante";
 
-    public const string ObterTodosOsIntegrantes = @"
+    public const string ObterTodosOsintegrantes = @"
             SELECT 
-                Integrantes.id_integrante AS IdIntegrante,
-                Integrantes.nome AS Nome, 
-                Integrantes_dias_disponiveis.dia_disponivel AS DiaDisponivel, 
-                Tipo_integrante.tipo_integrante AS TipoIntegrante
-            FROM Integrantes
-            LEFT JOIN Integrantes_dias_disponiveis
-                ON Integrantes.id_integrante = Integrantes_dias_disponiveis.id_integrante
-            LEFT JOIN Tipo_integrante
-                ON Integrantes.id_integrante = Tipo_integrante.id_integrante 
-            ORDER BY Integrantes.id_integrante
-            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
+                integrantes.id_integrante AS IdIntegrante,
+                integrantes.desc_nome AS Nome, 
+                integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDisponivel, 
+                tipo_integrante.cd_tipo_integrante AS TipoIntegrante
+            FROM integrantes
+            LEFT JOIN integrantes_dias_disponiveis
+                ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
+            LEFT JOIN tipo_integrante
+                ON integrantes.id_integrante = tipo_integrante.id_integrante 
+            ORDER BY integrantes.id_integrante
+            OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
 
-            SELECT COUNT(*) AS Total FROM Integrantes";
-
-    public const string QuantidadeIntegrantes = @" 
+    public const string Quantidadeintegrantes = @" 
                  SELECT COUNT(id_integrante) Total
                     FROM (
                     SELECT
-                       DISTINCT Integrantes.id_integrante id_integrante
-                    FROM Integrantes
-                             INNER JOIN Integrantes_dias_disponiveis
-                                        ON Integrantes.id_integrante = Integrantes_dias_disponiveis.id_integrante
-                             INNER JOIN Tipo_integrante
-                                        ON Integrantes.id_integrante = Tipo_integrante.id_integrante) AS Integrantes";
+                       DISTINCT integrantes.id_integrante id_integrante
+                    FROM integrantes
+                             INNER JOIN integrantes_dias_disponiveis
+                                        ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
+                             INNER JOIN tipo_integrante
+                                        ON integrantes.id_integrante = tipo_integrante.id_integrante) AS integrantes";
 
-    public const string InserirIntegrante = @"INSERT INTO Integrantes(nome) VALUES(@nome);
+    public const string InserirIntegrante = @"INSERT INTO integrantes(desc_nome) VALUES(@nome);
                                               SELECT SCOPE_IDENTITY();";
     
-    public const string AtualizarIntegrante = @"UPDATE Integrantes
-                                                SET nome = @nome
+    public const string AtualizarIntegrante = @"UPDATE integrantes
+                                                SET desc_nome = @nome
                                                 WHERE id_integrante = @idIntegrante";
 
-    public const string RemoverIntegrante = @"DELETE FROM Integrantes WHERE id_integrante = @idIntegrante";
+    public const string RemoverIntegrante = @"DELETE FROM integrantes WHERE id_integrante = @idIntegrante";
 }

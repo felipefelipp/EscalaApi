@@ -2,6 +2,7 @@ namespace EscalaApi.Data.DTOs;
 
 public class EscalaDto
 {
+    public int IdEscala { get; set; }
     public int? IdIntegrante { get; set; }
     public DateTime? Data { get; set; }
     public int TipoEscala { get; set; }

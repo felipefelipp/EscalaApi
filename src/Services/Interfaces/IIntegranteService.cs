@@ -1,4 +1,3 @@
-using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
 using EscalaApi.Data.Request;
 using EscalaApi.Services.Results;
@@ -9,8 +8,8 @@ public interface IIntegranteService
 {
     Task<Result<Integrante>> ObterIntegrantePorId(int idIntegrante);
     Task<Result<List<Integrante>>> ObterIntegrantesPorTipo(int tipoIntegrante);
-    Task<Result<Integrante>> RegistrarIntegrante(IntegranteRequest integranteRequest);
-    Task<Result<IntegrantesResultDto>> ObterIntegrantes(int pageNumber, int pageSize);
-    Task<Result<Integrante>> EditarIntegrante(int idIntegrante, IntegranteRequest integrante);
-    Task<Result> ExcluirIntegrante(int idIntegrante);
+    Task<Result<Integrante>> InserirIntegrante(IntegranteRequest integranteRequest);
+    Task<Result<(List<Integrante> integrantes, int total)>> ObterIntegrantes(int skip, int take);
+    Task<Result<Integrante>> AtualizarIntegrante(int idIntegrante, IntegranteRequest integrante);
+    Task<Result<Integrante>> ExcluirIntegrante(int idIntegrante);
 }
