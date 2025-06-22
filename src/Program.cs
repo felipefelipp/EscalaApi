@@ -6,7 +6,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProjectServices(builder.Configuration);
-builder.Services.AddMappingServices();
 builder.Services.AddControllers()
  .AddJsonOptions(options =>
     {
