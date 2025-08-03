@@ -6,8 +6,8 @@ namespace EscalaApi.Services.Interfaces;
 
 public interface IEscalaManagerService
 {
-    Task<Result<Escala>> ObterEscalaPorId(int idEscala);
+    Task<Result<EscalaResponse>> ObterEscalaPorId(int idEscala);
     Task<Result<List<Escala>>> CriarEscala(EscalaIntegrantes escala);
-    Task<Result<List<EscalaResultDto>>> ObterEscalas(EscalaFiltro escalaFiltro);
+    Task<Result<List<EscalaResponse>>> ObterEscalas(EscalaFiltro escalaFiltro);
     Task<Result<EscalaIntegrante>> EditarEscala(int id, EscalaIntegrante escala);
 }

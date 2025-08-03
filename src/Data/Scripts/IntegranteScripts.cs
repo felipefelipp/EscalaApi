@@ -3,10 +3,10 @@ namespace EscalaApi.Data.Scripts;
 public static class IntegranteScripts
 {
     public const string ObterIntegrantePorIdScript = @"
-             SELECT 
+             SELECT DISTINCT
                 integrantes.id_integrante AS IdIntegrante,
                 integrantes.desc_nome AS Nome, 
-                integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDisponivel, 
+                integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDaSemanaDisponivel, 
                 tipo_integrante.cd_tipo_integrante AS TipoIntegrante
             FROM integrantes
             LEFT JOIN integrantes_dias_disponiveis
@@ -16,31 +16,29 @@ public static class IntegranteScripts
              WHERE integrantes.id_integrante = @IdIntegrante";
 
     public const string ObterIntegrantesPorTipoScript = @"
-             SELECT 
-                integrantes.id_integrante AS IdIntegrante,
-                integrantes.desc_nome AS Nome, 
-                integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDisponivel, 
-                tipo_integrante.cd_tipo_integrante AS TipoIntegrante
-            FROM integrantes
-            LEFT JOIN integrantes_dias_disponiveis
-                ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
-            LEFT JOIN tipo_integrante
-                ON integrantes.id_integrante = tipo_integrante.id_integrante 
-             WHERE tipo_integrante.cd_tipo_integrante = @TipoIntegrante";
+                SELECT DISTINCT
+                    integrantes.id_integrante AS IdIntegrante,
+                    integrantes.desc_nome AS Nome, 
+                    integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDaSemanaDisponivel, 
+                    tipo_integrante.cd_tipo_integrante AS TipoIntegrante
+                FROM integrantes
+                LEFT JOIN integrantes_dias_disponiveis
+                    ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
+                LEFT JOIN tipo_integrante
+                    ON integrantes.id_integrante = tipo_integrante.id_integrante 
+                WHERE tipo_integrante.cd_tipo_integrante = @TipoIntegrante";
 
     public const string ObterTodosOsintegrantes = @"
-            SELECT 
+            SELECT DISTINCT
                 integrantes.id_integrante AS IdIntegrante,
                 integrantes.desc_nome AS Nome, 
-                integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDisponivel, 
+                integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDaSemanaDisponivel, 
                 tipo_integrante.cd_tipo_integrante AS TipoIntegrante
             FROM integrantes
             LEFT JOIN integrantes_dias_disponiveis
                 ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
             LEFT JOIN tipo_integrante
-                ON integrantes.id_integrante = tipo_integrante.id_integrante 
-            ORDER BY integrantes.id_integrante
-            OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
+                ON integrantes.id_integrante = tipo_integrante.id_integrante";
 
     public const string Quantidadeintegrantes = @" 
                  SELECT COUNT(id_integrante) Total
