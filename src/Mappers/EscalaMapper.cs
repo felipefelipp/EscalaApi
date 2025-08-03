@@ -67,12 +67,12 @@ public static class EscalaMapper
         return escala;
     }
 
-    public static List<EscalaResultDto> ParaListaEscalaDto(this List<EscalaDto> escalasDto)
+    public static List<EscalaResponse> ParaListaEscalaResultDto(this List<EscalaDto> escalasDto)
     {
-        List<EscalaResultDto> escalas = new();
+        List<EscalaResponse> escalas = new();
         foreach (var escala in escalasDto)
         {
-            escalas.Add(new EscalaResultDto
+            escalas.Add(new EscalaResponse
             {
                 IdEscala = escala.IdEscala,
                 Data = escala.Data.Value,
@@ -83,5 +83,18 @@ public static class EscalaMapper
             });
         }
         return escalas;
+    }
+
+    public static EscalaResponse ParaEscalaResultDto(this EscalaDto escalaDto)
+    {
+        return new EscalaResponse
+        {
+            IdEscala = escalaDto.IdEscala,
+            Data = escalaDto.Data.Value,
+            IdIntegrante = escalaDto.IdIntegrante.Value,
+            NomeIntegrante = escalaDto.Nome,
+            CodigoTipoEscala = escalaDto.TipoEscala,
+            DescricaoTipoEscala = escalaDto.DescricaoTipoEscala
+        };
     }
 }

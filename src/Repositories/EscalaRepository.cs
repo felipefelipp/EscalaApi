@@ -46,8 +46,8 @@ public class EscalaRepository : IEscalaRepository
                 query += " OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
             }
 
-            parametros.Add("@Skip", escalaFiltro.Skip);
-            parametros.Add("@Take", escalaFiltro.Take);
+            parametros.Add("@Skip", escalaFiltro.Skip, DbType.Int32);
+            parametros.Add("@Take", escalaFiltro.Take, DbType.Int32);
 
             var result = await connection.QueryAsync<EscalaDto>(query, parametros);
 

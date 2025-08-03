@@ -1,0 +1,7 @@
+namespace EscalaApi.Data.Entities;
+
+public class Filtro
+{
+    public int Skip { get; set; }
+    public int Take { get; set; }
+}
