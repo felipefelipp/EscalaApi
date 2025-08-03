@@ -1,4 +1,5 @@
 using System.Net;
+using EscalaApi.Data.Entities;
 using EscalaApi.Data.Request;
 using EscalaApi.Services.Interfaces;
 using EscalaApi.Services.Models;
@@ -22,9 +23,9 @@ public class IntegranteController : ControllerBase
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ObterIntegrantes(int skip, int take)
+    public async Task<IActionResult> ObterIntegrantes([FromQuery] IntegranteFiltro filtro)
     {
-        var retorno = await _integranteService.ObterIntegrantes(skip, take);
+        var retorno = await _integranteService.ObterIntegrantes(filtro);
 
         if (!retorno.Sucess)
         {

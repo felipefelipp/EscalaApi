@@ -23,7 +23,7 @@ public class EscalaManager : IEscalaManagerService
         _tipoEscalaRepository = tipoEscalaRepository;
     }
 
-    public async Task<Result<Escala>> ObterEscalaPorId(int idEscala)
+    public async Task<Result<EscalaResponse>> ObterEscalaPorId(int idEscala)
     {
         var erros = new List<Notification>();
         var escaladto = await _escalaRepository.ObterEscalaPorId(idEscala);
@@ -31,12 +31,12 @@ public class EscalaManager : IEscalaManagerService
         if (escaladto == null)
         {
             erros.Add(new Notification(null, $"Escala não encontrada."));
-            return Result<Escala>.NotFound(erros);
+            return Result<EscalaResponse>.NotFound(erros);
         }
 
-        var escala = escaladto.ParaEscala();
+        var escala = escaladto.ParaEscalaResultDto();
 
-        return Result<Escala>.Ok(escala);
+        return Result<EscalaResponse>.Ok(escala);
     }
 
     public async Task<Result<List<Escala>>> CriarEscala(EscalaIntegrantes escala)
@@ -51,16 +51,74 @@ public class EscalaManager : IEscalaManagerService
 
         foreach (var dia in escala.DiasDaSemana)
         {
-            var DiasDaEscala = ObterDiasEscala(escala.DataInicio.Date, escala.DataFim.Date, dia);
+            var DiasDaEscala = ObterDiasEscala(escala.DataInicio, escala.DataFim, dia);
 
-            await ProcessarEscalas(escala.TipoEscala, DiasDaEscala, escalaIntegrantes);
+            foreach (var tipo in escala.TipoEscala)
+            {
+                var filtro = new IntegranteFiltro
+                {
+                    TipoIntegrante = tipo,
+                    DiaDisponivel = (DayOfWeek)dia
+                };
+
+                var integranteDto = await _integranteRepository.ObterIntegrantes(filtro);
+                if (integranteDto.integrantes == null || integranteDto.integrantes.Count == 0)
+                    continue;
+                    
+                var escalasExistentes = await _escalaRepository.ObterEscalas(new EscalaFiltro());
+                var escalasObtidas = escalasExistentes.ParaListaEscala();
+                
+                foreach (var diaDaEscala in DiasDaEscala)
+                {
+                    var integrantes = integranteDto.integrantes.ParaIntegrantes();
+                    Integrante integranteEscolhido;
+                    var random = new Random();
+                    bool primeiroDiaSelecionado = false;
+
+
+                    // pensar na estratégia de retornar um count group by para cada tipo de intergrante
+                    // ex a = 3 b = 3 c = 2 no fim selecionar o c que foi menos escalado
+                    if (escalasObtidas.Count(e => e.Data.Date == diaDaEscala.Data.Date && e.TipoEscala == tipo) > 0)
+                        continue;
+
+                    // Para o primeiro dia
+                    if (escalasObtidas.Count <= 0 && !primeiroDiaSelecionado)
+                    {
+                        integranteEscolhido = integrantes[random.Next(integrantes.Count)];
+                        primeiroDiaSelecionado = true;
+                    }
+                    else
+                    {
+                        var contagemSelecoes = integrantes.ToDictionary(
+                            i => i,
+                            i => escalasObtidas.Count(e =>
+                                    e.Integrante.IdIntegrante == i.IdIntegrante && e.TipoEscala == tipo));
+
+                        var minSelecoes = contagemSelecoes.Values.Min();
+
+                        var menosSelecionados =
+                            contagemSelecoes.Where(cs => cs.Value == minSelecoes).Select(cs => cs.Key).ToList();
+
+                        integranteEscolhido = menosSelecionados[random.Next(menosSelecionados.Count)];
+                    }
+
+                    escalasObtidas.Add(new Escala(
+                            integranteEscolhido,
+                            diaDaEscala.Data.Date,
+                            tipo));
+
+                    escalaIntegrantes.Add(new Escala(
+                        integranteEscolhido,
+                        diaDaEscala.Data.Date,
+                        tipo));
+                }
+            }
+
+            var escalaDto = escalaIntegrantes.ParaListaEscalaDto();
+            await _escalaRepository.InserirEscala(escalaDto);
         }
 
-        var escalaDto = escalaIntegrantes.ParaListaEscalaDto();
-
-        await _escalaRepository.InserirEscala(escalaDto);
-
-        return Result<List<Escala>>.Ok(escalaIntegrantes);
+        return Result<List<Escala>>.Ok(escalaIntegrantes.OrderBy(e => e.Data.Date).ToList());
     }
 
     private async Task ValidarErros(EscalaIntegrantes escala, List<Notification> erros)
@@ -122,26 +180,26 @@ public class EscalaManager : IEscalaManagerService
         }
     }
 
-    public async Task<Result<List<EscalaResultDto>>> ObterEscalas(EscalaFiltro escalaFiltro)
+    public async Task<Result<List<EscalaResponse>>> ObterEscalas(EscalaFiltro escalaFiltro)
     {
         var erros = new List<Notification>();
 
         if (escalaFiltro.Skip < 0 || escalaFiltro.Take <= 0)
         {
             erros.Add(new Notification("Paginacao", "Os parâmetros de paginação devem ser maiores que zero."));
-            return Result<List<EscalaResultDto>>.BadRequest(erros);
+            return Result<List<EscalaResponse>>.BadRequest(erros);
         }
 
         if (escalaFiltro.DataInicio.HasValue && escalaFiltro.DataFim.HasValue && escalaFiltro.DataInicio > escalaFiltro.DataFim)
         {
             erros.Add(new Notification("Data", "A data de início não pode ser maior que a data de fim."));
-            return Result<List<EscalaResultDto>>.BadRequest(erros);
+            return Result<List<EscalaResponse>>.BadRequest(erros);
         }
 
         var escalasDto = await _escalaRepository.ObterEscalas(escalaFiltro);
-        var escalas = escalasDto.ParaListaEscalaDto();
+        var escalas = escalasDto.ParaListaEscalaResultDto();
 
-        return Result<List<EscalaResultDto>>.Ok(escalas);
+        return Result<List<EscalaResponse>>.Ok(escalas.OrderBy(e => e.Data.Value.Date).ToList());
     }
 
     public async Task<Result<EscalaIntegrante>> EditarEscala(int id, EscalaIntegrante escala)
@@ -156,7 +214,7 @@ public class EscalaManager : IEscalaManagerService
 
         escaladto.TipoEscala = (int)escala.TipoEscala;
         escaladto.IdIntegrante = escala.idIntegrante;
-        escaladto.Data = escala.Data;
+        escaladto.Data = escala.Data.Date;
         var escalaAtualizada = await _escalaRepository.AtualizarEscala(id, escaladto);
         if (!escalaAtualizada)
         {
@@ -187,84 +245,5 @@ public class EscalaManager : IEscalaManagerService
         }
 
         return diasEscala;
-    }
-
-    private async Task ProcessarEscalas(List<int> tipos,
-                                        List<DiaSemana> escalaDia,
-                                        List<Escala> escalaIntegrantes)
-    {
-        foreach (var tipo in tipos)
-        {
-            var integranteDto = await _integranteRepository.ObterIntegrantesPorTipo(tipo);
-            if (integranteDto == null || integranteDto.Count == 0)
-                break;
-
-            var integrante = integranteDto.ParaIntegrantes();
-            var escalaMinistro = await GerarEscala(integrante, escalaDia, tipo);
-            escalaIntegrantes.AddRange(escalaMinistro);
-            break;
-        }
-    }
-
-    private async Task<List<Escala>> GerarEscala(List<Integrante> integrantes,
-                                                 List<DiaSemana> diasEscala,
-                                                 int tipoEscala)
-    {
-        var escala = new List<Escala>();
-        Integrante integranteEscolhido;
-        var random = new Random();
-        bool primeiroDiaSelecionado = false;
-
-        foreach (var dia in diasEscala)
-        {
-            var disponiveis = integrantes.Where(i => i.DiasDaSemanaDisponiveis.Contains(dia.DayOfWeek)).ToList();
-
-            if (disponiveis.Count <= 0)
-            {
-                Console.WriteLine($"Nenhum integrante disponível para {dia.Data}.");
-                continue;
-            }
-
-            var escalasExistentes = await _escalaRepository.ObterEscalas(new EscalaFiltro
-            {
-                DataInicio = dia.Data.Date,
-                DataFim = dia.Data.Date,
-                Tipo = tipoEscala
-            });
-
-            var escalasObtidas = escalasExistentes.ParaListaEscala();
-            // var escalaExistente = escalasObtidas.Any(x => x.Data.Date == dia.Data.Date && x.TipoEscala == tipoEscala);
-
-            if (escalasObtidas.Any())
-                continue;
-
-            // Para o primeiro dia
-            if (escalasObtidas.Count <= 0 && !primeiroDiaSelecionado)
-            {
-                integranteEscolhido = disponiveis[random.Next(disponiveis.Count)];
-                primeiroDiaSelecionado = true;
-            }
-            else
-            {
-                var contagemSelecoes = disponiveis.ToDictionary(
-                    i => i,
-                    i => escalasObtidas.Count(e =>
-                        e.Integrante.IdIntegrante == i.IdIntegrante && e.TipoEscala == tipoEscala));
-
-                var minSelecoes = contagemSelecoes.Values.Min();
-
-                var menosSelecionados =
-                    contagemSelecoes.Where(cs => cs.Value == minSelecoes).Select(cs => cs.Key).ToList();
-
-                integranteEscolhido = menosSelecionados[random.Next(menosSelecionados.Count)];
-            }
-
-            escala.Add(new Escala(
-                integranteEscolhido,
-                dia.Data,
-                tipoEscala));
-        }
-
-        return escala;
     }
 }

@@ -64,23 +64,23 @@ public class IntegranteService : IIntegranteService
         return Result<List<Integrante>>.Ok(integrantes);
     }
 
-    public async Task<Result<(List<Integrante>, int)>> ObterIntegrantes(int skip, int take)
+    public async Task<Result<(List<Integrante>, int)>> ObterIntegrantes(IntegranteFiltro filtro)
     {
         var erros = new List<Notification>();
 
-        if (skip < 0 || take <= 0)
+        if (filtro.Skip < 0 || filtro.Take <= 0)
         {
             erros.Add(new Notification("Skip/Take", "Valores inválidos para paginação."));
             return Result<(List<Integrante>, int)>.BadRequest(erros);
         }
 
-        if (take > 100)
+        if (filtro.Take > 100)
         {
             erros.Add(new Notification("Take", "O valor máximo permitido para 'take' é 100."));
             return Result<(List<Integrante>, int)>.BadRequest(erros);
         }
 
-        var integrantesDto = await _integranteRepository.ObterIntegrantes(skip, take);
+        var integrantesDto = await _integranteRepository.ObterIntegrantes(filtro);
 
         var integrantes = integrantesDto.integrantes.ParaIntegrantes();
         var total = integrantesDto.total;

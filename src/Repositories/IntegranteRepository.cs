@@ -2,6 +2,7 @@ using System.Data;
 using Dapper;
 using EscalaApi.Data;
 using EscalaApi.Data.DTOs;
+using EscalaApi.Data.Entities;
 using EscalaApi.Data.Scripts;
 using EscalaApi.Repositories.Interfaces;
 
@@ -54,19 +55,38 @@ public class IntegranteRepository : IIntegranteRepository
         }
     }
 
-    public async Task<(List<IntegranteDto>, int)> ObterIntegrantes(int skip, int take)
+    public async Task<(List<IntegranteDto>, int)> ObterIntegrantes(IntegranteFiltro filtro)
     {
+        using var connection = DatabaseContext.GetConnection();
+
         try
         {
-            var parameters = new
+            string query = IntegranteScripts.ObterTodosOsintegrantes;
+            var where = new List<string>();
+            var parameters = new DynamicParameters();
+
+            if (filtro.TipoIntegrante > 0)
             {
-                Skip = skip,
-                Take = take
-            };
+                where.Add("tipo_integrante.cd_tipo_integrante = @TipoIntegrante");
+                parameters.Add("@TipoIntegrante", filtro.TipoIntegrante, DbType.Int32);
+            }
 
-            using var connection = DatabaseContext.GetConnection();
+            if (filtro.DiaDisponivel >= 0)
+            {
+                where.Add("integrantes_dias_disponiveis.cd_dia_disponivel = @DiaDisponivel");
+                parameters.Add("@DiaDisponivel", filtro.DiaDisponivel, DbType.Int32);
+            }
 
-            const string query = IntegranteScripts.ObterTodosOsintegrantes;
+            if (where.Count > 0)
+                query += " WHERE " + string.Join(" AND ", where);
+
+            query += " ORDER BY integrantes.id_integrante";
+
+            if (filtro.Skip > 0 || filtro.Take > 0)
+                query += " OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
+
+            parameters.Add("@Skip", filtro.Skip, DbType.Int32);
+            parameters.Add("@Take", filtro.Take, DbType.Int32);
 
             var integrantes = await connection.QueryAsync<IntegranteDto>(query, parameters);
 
@@ -74,7 +94,7 @@ public class IntegranteRepository : IIntegranteRepository
 
             if (integrantes == null || !integrantes.Any())
             {
-                return (new List<IntegranteDto>(), 0);
+                return ([], 0);
             }
 
             return (integrantes.ToList(), total);
