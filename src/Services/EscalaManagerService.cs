@@ -1,3 +1,5 @@
+using System.Globalization;
+using CsvHelper;
 using EscalaApi.Data.DTOs;
 using EscalaApi.Data.Entities;
 using EscalaApi.Mappers;
@@ -42,7 +44,7 @@ public class EscalaManager : IEscalaManagerService
     public async Task<Result<List<Escala>>> CriarEscala(EscalaIntegrantes escala)
     {
         List<Notification> erros = [];
-        List<Escala> escalaIntegrantes = [];
+        List<Escala> escalasVisualizacao = [];
 
         await ValidarErros(escala, erros);
 
@@ -51,6 +53,7 @@ public class EscalaManager : IEscalaManagerService
 
         foreach (var dia in escala.DiasDaSemana)
         {
+            List<Escala> escalaIntegrantes = [];
             var DiasDaEscala = ObterDiasEscala(escala.DataInicio, escala.DataFim, dia);
 
             foreach (var tipo in escala.TipoEscala)
@@ -64,10 +67,10 @@ public class EscalaManager : IEscalaManagerService
                 var integranteDto = await _integranteRepository.ObterIntegrantes(filtro);
                 if (integranteDto.integrantes == null || integranteDto.integrantes.Count == 0)
                     continue;
-                    
+
                 var escalasExistentes = await _escalaRepository.ObterEscalas(new EscalaFiltro());
                 var escalasObtidas = escalasExistentes.ParaListaEscala();
-                
+
                 foreach (var diaDaEscala in DiasDaEscala)
                 {
                     var integrantes = integranteDto.integrantes.ParaIntegrantes();
@@ -75,9 +78,6 @@ public class EscalaManager : IEscalaManagerService
                     var random = new Random();
                     bool primeiroDiaSelecionado = false;
 
-
-                    // pensar na estratégia de retornar um count group by para cada tipo de intergrante
-                    // ex a = 3 b = 3 c = 2 no fim selecionar o c que foi menos escalado
                     if (escalasObtidas.Count(e => e.Data.Date == diaDaEscala.Data.Date && e.TipoEscala == tipo) > 0)
                         continue;
 
@@ -114,11 +114,33 @@ public class EscalaManager : IEscalaManagerService
                 }
             }
 
-            var escalaDto = escalaIntegrantes.ParaListaEscalaDto();
+            var escalaDto = escalaIntegrantes.OrderByDescending(e => e.Data).ToList().ParaListaEscalaDto();
+
+            if (!escala.Persistir)
+            {
+                escalasVisualizacao.AddRange(escalaIntegrantes);
+                continue;
+            }
+
             await _escalaRepository.InserirEscala(escalaDto);
         }
 
-        return Result<List<Escala>>.Ok(escalaIntegrantes.OrderBy(e => e.Data.Date).ToList());
+        if (!escala.Persistir)
+        {
+            return Result<List<Escala>>.Ok(escalasVisualizacao.OrderByDescending(e => e.Data).ToList());
+        }
+
+        var escalasCriadas = await _escalaRepository.ObterEscalas(new EscalaFiltro
+        {
+            Skip = 0,
+            Take = 100,
+            DataInicio = escala.DataInicio,
+            DataFim = escala.DataFim
+        });
+
+        var escalasResult = escalasCriadas.ParaListaEscala();
+
+        return Result<List<Escala>>.Created(escalasResult);
     }
 
     private async Task ValidarErros(EscalaIntegrantes escala, List<Notification> erros)
@@ -199,7 +221,7 @@ public class EscalaManager : IEscalaManagerService
         var escalasDto = await _escalaRepository.ObterEscalas(escalaFiltro);
         var escalas = escalasDto.ParaListaEscalaResultDto();
 
-        return Result<List<EscalaResponse>>.Ok(escalas.OrderBy(e => e.Data.Value.Date).ToList());
+        return Result<List<EscalaResponse>>.Ok(escalas.OrderByDescending(e => e.Data.Value).ToList());
     }
 
     public async Task<Result<EscalaIntegrante>> EditarEscala(int id, EscalaIntegrante escala)
@@ -245,5 +267,94 @@ public class EscalaManager : IEscalaManagerService
         }
 
         return diasEscala;
+    }
+
+    public async Task<Result<EscalaResponse>> ImportarEscalasDeCsv(IFormFile csvContent, bool substituirExistentes)
+    {
+        var erros = new List<Notification>();
+        if (csvContent == null || csvContent.Length == 0)
+        {
+            erros.Add(new Notification("Arquivo", $"Arquivo não enviado."));
+            return Result<EscalaResponse>.BadRequest(erros);
+        }
+
+        var anonymousTypeDefinition = new
+        {
+            Data = string.Empty,
+            Ministro = string.Empty,
+            BackingVocal = string.Empty,
+            BackingVocal2 = string.Empty,
+            Bateria = string.Empty,
+            ContraBaixo = string.Empty,
+            Teclado = string.Empty,
+            Violao = string.Empty
+        };
+
+        using var stream = csvContent.OpenReadStream();
+        using var reader = new StreamReader(stream);
+        using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+        var records = csv.GetRecords(anonymousTypeDefinition).ToList();
+
+        foreach (var record in records)
+        {
+            foreach (var prop in record.GetType().GetProperties())
+            {
+                if (prop.Name != "Data" && prop.GetValue(record)?.ToString() != "null")
+                {
+                    var data = DateTime.ParseExact(record.Data, "dd/MM/yyyy", CultureInfo.InvariantCulture).Date;
+                    var tipo = prop.Name switch
+                    {
+                        "Ministro" => 1,
+                        "BackingVocal" => 2,
+                        "BackingVocal2" => 3,
+                        "Teclado" => 4,
+                        "Violao" => 5,
+                        "ContraBaixo" => 6,
+                        "Guitarra" => 7,
+                        "Bateria" => 8,
+                        _ => 0
+                    };
+
+                    var escalaExistente = await _escalaRepository.ObterEscalas(new EscalaFiltro
+                    {
+                        DataInicio = data,
+                        DataFim = data,
+                        Tipo = tipo
+                    });
+
+                    if (escalaExistente?.Count > 0 && substituirExistentes)
+                    {
+                        var escalaAtualizada = await _escalaRepository.AtualizarEscala(escalaExistente[0].IdEscala, new EscalaDto
+                        {
+                            IdEscala = escalaExistente[0].IdEscala,
+                            Data = data,
+                            TipoEscala = tipo,
+                            IdIntegrante = escalaExistente[0].IdIntegrante
+                        });
+                    }
+                    else if (escalaExistente == null || escalaExistente.Count == 0)
+                    {
+                        var (integrantes, total) = await _integranteRepository.ObterIntegrantes(new IntegranteFiltro
+                        {
+                            Nome = prop.GetValue(record)?.ToString(),
+                            TipoIntegrante = tipo
+                        });
+
+                        if (integrantes?.Count > 0)
+                        {
+                            var novaEscala = new EscalaDto
+                            {
+                                Data = data,
+                                TipoEscala = tipo,
+                                IdIntegrante = integrantes[0].IdIntegrante
+                            };
+
+                            await _escalaRepository.InserirEscala(new List<EscalaDto> { novaEscala });
+                        }
+                    }
+                }
+            }
+        }
+        return Result<EscalaResponse>.Ok(new EscalaResponse());
     }
 }

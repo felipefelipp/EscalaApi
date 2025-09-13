@@ -94,4 +94,17 @@ public class EscalaController : ControllerBase
 
         return Ok(retorno);
     }
+
+    [HttpPost("/escalas/import-csv")]
+    public async Task<IActionResult> ImportCsv(IFormFile file, bool substituirExistentes = false)
+    {
+        var result = await _escalaManagerService.ImportarEscalasDeCsv(file, substituirExistentes);
+
+        if (!result.Sucess)
+        {
+            return BadRequest(new RetornoErroModel { Erros = result.Notifications.ToList() });
+        }
+
+        return Ok(result);
+    }
 }

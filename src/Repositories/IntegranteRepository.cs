@@ -77,12 +77,18 @@ public class IntegranteRepository : IIntegranteRepository
                 parameters.Add("@DiaDisponivel", filtro.DiaDisponivel, DbType.Int32);
             }
 
+            if (filtro?.Nome?.Length > 0)
+            {
+                where.Add("integrantes.desc_nome = @Nome");
+                parameters.Add("@Nome", filtro.Nome, DbType.String);
+            }
+
             if (where.Count > 0)
                 query += " WHERE " + string.Join(" AND ", where);
 
             query += " ORDER BY integrantes.id_integrante";
 
-            if (filtro.Skip > 0 || filtro.Take > 0)
+            if (filtro?.Skip > 0 || filtro?.Take > 0)
                 query += " OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
 
             parameters.Add("@Skip", filtro.Skip, DbType.Int32);
