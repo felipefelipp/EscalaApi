@@ -242,6 +242,7 @@ public class IntegranteService : IIntegranteService
             return Result<Integrante>.BadRequest(erros);
         }
 
+
         return Result<Integrante>.NoContent();
     }
 }
