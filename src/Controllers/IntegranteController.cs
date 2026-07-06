@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EscalaApi.Controllers;
 
+/// <summary>Pessoas elegíveis para escala, com tipos e disponibilidade. Alimentam o algoritmo de rotação.</summary>
 [ApiController]
 [Route("[controller]")]
+[Tags("Integrantes")]
 public class IntegranteController : ControllerBase
 {
     private readonly IIntegranteService _integranteService;
@@ -18,6 +20,7 @@ public class IntegranteController : ControllerBase
         _integranteService = integranteService;
     }
 
+    /// <summary>Lista integrantes com paginação e filtros opcionais via query string.</summary>
     [HttpGet("/integrantes")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
@@ -47,6 +50,7 @@ public class IntegranteController : ControllerBase
             );
     }
 
+    /// <summary>Obtém um integrante pelo ID, com tipos e disponibilidade.</summary>
     [HttpGet("/integrantes/{idIntegrante}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
@@ -67,26 +71,13 @@ public class IntegranteController : ControllerBase
         return Ok(retorno);
     }
 
-    // <summary>
-    // Obtém uma lista de integrantes com base no tipo fornecido.
-    // </summary>
-    // <param name="tipoIntegrante">
-    // O tipo de integrante a ser filtrado. Valores possíveis:
-    // - 0: Ministro
-    // - 1: Backing Vocal
-    // - 2: Instrumentista
-    // </param>
-    // <returns>
-    // Retorna uma resposta HTTP com o seguinte comportamento:
-    // - 200 OK: Se a operação for bem-sucedida, retorna a lista de integrantes.
-    // - 404 NotFound: Se nenhum integrante for encontrado.
-    // - 400 BadRequest: Se ocorrer algum erro de validação.
-    // - 500 InternalServerError: Em caso de erro interno.
-    // </returns>
+    /// <summary>Lista integrantes habilitados para um tipo do catálogo (pool de candidatos por função).</summary>
+    /// <param name="tipoIntegrante">ID do tipo em <c>/tipos-integrante</c>.</param>
     [HttpGet("/integrantes-tipo")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ObterIntegrantesPorTipo([FromQuery] int tipoIntegrante)
     {
@@ -105,10 +96,12 @@ public class IntegranteController : ControllerBase
         return Ok(retorno);
     }
 
+    /// <summary>Cadastra integrante. Exige ao menos um tipo; retorna 422 se o catálogo estiver vazio.</summary>
     [HttpPost("/integrantes")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> InserirIntegrante(IntegranteRequest integrante)
     {
@@ -127,6 +120,7 @@ public class IntegranteController : ControllerBase
         return Ok(retorno);
     }
 
+    /// <summary>Atualiza dados, tipos e disponibilidade de um integrante existente.</summary>
     [HttpPut("/integrantes/{idIntegrante}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
@@ -146,8 +140,9 @@ public class IntegranteController : ControllerBase
         return Ok(retorno);
     }
 
+    /// <summary>Remove um integrante do sistema.</summary>
     [HttpDelete("/integrantes/{idIntegrante}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
