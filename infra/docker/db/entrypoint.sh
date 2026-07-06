@@ -1,18 +1,23 @@
 #!/bin/bash
 
-# Start SQL Server in the background
 /opt/mssql/bin/sqlservr &
 
-# Wait until SQL Server is ready
 echo "Waiting for SQL Server to be available..."
 until /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P escalaApi34@FF -C -Q "SELECT 1" > /dev/null 2>&1; do
   sleep 1
-  echo "Still Waiting for SQL Server to be available..."
+  echo "Still waiting for SQL Server..."
 done
 
-# Run your init script
 echo "Running init.sql..."
 /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P escalaApi34@FF -C -i /docker-entrypoint-initdb.d/init.sql
-echo "Finished running init.sql."
-# Keep container alive
+
+MIGRATIONS_DIR="/docker-entrypoint-initdb.d/migrations"
+if [ -d "$MIGRATIONS_DIR" ]; then
+  for migration in $(ls "$MIGRATIONS_DIR"/*.sql 2>/dev/null | sort); do
+    echo "Running migration: $(basename "$migration")..."
+    /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P escalaApi34@FF -C -i "$migration"
+  done
+fi
+
+echo "Database initialization complete."
 wait

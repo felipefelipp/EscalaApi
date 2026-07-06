@@ -7,12 +7,12 @@ public static class IntegranteScripts
                 integrantes.id_integrante AS IdIntegrante,
                 integrantes.desc_nome AS Nome, 
                 integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDaSemanaDisponivel, 
-                tipo_integrante.cd_tipo_integrante AS TipoIntegrante
+                integrante_tipo.cd_tipo_integrante AS TipoIntegrante
             FROM integrantes
             LEFT JOIN integrantes_dias_disponiveis
                 ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
-            LEFT JOIN tipo_integrante
-                ON integrantes.id_integrante = tipo_integrante.id_integrante 
+            LEFT JOIN integrante_tipo
+                ON integrantes.id_integrante = integrante_tipo.id_integrante 
              WHERE integrantes.id_integrante = @IdIntegrante";
 
     public const string ObterIntegrantesPorTipoScript = @"
@@ -20,25 +20,25 @@ public static class IntegranteScripts
                     integrantes.id_integrante AS IdIntegrante,
                     integrantes.desc_nome AS Nome, 
                     integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDaSemanaDisponivel, 
-                    tipo_integrante.cd_tipo_integrante AS TipoIntegrante
+                    integrante_tipo.cd_tipo_integrante AS TipoIntegrante
                 FROM integrantes
                 LEFT JOIN integrantes_dias_disponiveis
                     ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
-                LEFT JOIN tipo_integrante
-                    ON integrantes.id_integrante = tipo_integrante.id_integrante 
-                WHERE tipo_integrante.cd_tipo_integrante = @TipoIntegrante";
+                LEFT JOIN integrante_tipo
+                    ON integrantes.id_integrante = integrante_tipo.id_integrante 
+                WHERE integrante_tipo.cd_tipo_integrante = @TipoIntegrante";
 
     public const string ObterTodosOsintegrantes = @"
             SELECT DISTINCT
                 integrantes.id_integrante AS IdIntegrante,
                 integrantes.desc_nome AS Nome, 
                 integrantes_dias_disponiveis.cd_dia_disponivel AS DiaDaSemanaDisponivel, 
-                tipo_integrante.cd_tipo_integrante AS TipoIntegrante
+                integrante_tipo.cd_tipo_integrante AS TipoIntegrante
             FROM integrantes
             LEFT JOIN integrantes_dias_disponiveis
                 ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
-            LEFT JOIN tipo_integrante
-                ON integrantes.id_integrante = tipo_integrante.id_integrante";
+            LEFT JOIN integrante_tipo
+                ON integrantes.id_integrante = integrante_tipo.id_integrante";
 
     public const string Quantidadeintegrantes = @" 
                  SELECT COUNT(id_integrante) Total
@@ -48,8 +48,8 @@ public static class IntegranteScripts
                     FROM integrantes
                              INNER JOIN integrantes_dias_disponiveis
                                         ON integrantes.id_integrante = integrantes_dias_disponiveis.id_integrante
-                             INNER JOIN tipo_integrante
-                                        ON integrantes.id_integrante = tipo_integrante.id_integrante) AS integrantes";
+                             INNER JOIN integrante_tipo
+                                        ON integrantes.id_integrante = integrante_tipo.id_integrante) AS integrantes";
 
     public const string InserirIntegrante = @"INSERT INTO integrantes(desc_nome) VALUES(@nome);
                                               SELECT SCOPE_IDENTITY();";

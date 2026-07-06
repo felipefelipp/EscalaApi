@@ -4,7 +4,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "EscalaApi",
+        Version = "v2",
+        Description = "Plataforma genérica de escalas. Configure tipos, integrantes, estratégia e gere preview antes de persistir."
+    });
+});
 builder.Services.AddProjectServices(builder.Configuration);
 builder.Services.AddControllers()
  .AddJsonOptions(options =>

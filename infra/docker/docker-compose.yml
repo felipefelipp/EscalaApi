@@ -9,6 +9,7 @@ services:
     volumes:
       - sql-data:/var/opt/mssql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/migrations:/docker-entrypoint-initdb.d/migrations
       - ./db/entrypoint.sh:/entrypoint.sh
     restart: always
     entrypoint: ["/bin/bash", "/entrypoint.sh"]

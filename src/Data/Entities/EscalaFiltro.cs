@@ -5,4 +5,5 @@ public class EscalaFiltro : Filtro
     public DateTime? DataInicio { get; set; }
     public DateTime? DataFim { get; set; }
     public int? Tipo { get; set; }
+    public int? IdConfiguracao { get; set; }
 }

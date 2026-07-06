@@ -2,8 +2,8 @@ namespace EscalaApi.Data.Scripts;
 
 public class EscalaScripts
 {
-    public const string InserirEscala = @"INSERT INTO escalas (id_integrante, dt_data_escala, cd_tipo_escala)
-                                          VALUES (@IdIntegrante, @Data, @TipoEscala)";
+    public const string InserirEscala = @"INSERT INTO escalas (id_integrante, dt_data_escala, cd_tipo_escala, id_configuracao)
+                                          VALUES (@IdIntegrante, @Data, @TipoEscala, @IdConfiguracao)";
     
     public const string  ObterEscala = @"SELECT escalas.id_escala IdEscala,
                                                escalas.id_integrante IdIntegrante, 

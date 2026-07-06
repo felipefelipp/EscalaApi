@@ -2,6 +2,7 @@ using System.Net;
 using EscalaApi.Data.Entities;
 using EscalaApi.Services.Interfaces;
 using EscalaApi.Services.Models;
+using EscalaApi.Services.Rotacao.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EscalaApi.Controllers;
@@ -11,10 +12,12 @@ namespace EscalaApi.Controllers;
 public class EscalaController : ControllerBase
 {
     private readonly IEscalaManagerService _escalaManagerService;
+    private readonly IEscalaGeracaoService _escalaGeracaoService;
 
-    public EscalaController(IEscalaManagerService escalaManagerService)
+    public EscalaController(IEscalaManagerService escalaManagerService, IEscalaGeracaoService escalaGeracaoService)
     {
         _escalaManagerService = escalaManagerService;
+        _escalaGeracaoService = escalaGeracaoService;
     }
 
     [HttpGet("/escalas/{id}")]
@@ -38,6 +41,7 @@ public class EscalaController : ControllerBase
     }
 
     [HttpPost("/escalas")]
+    [Obsolete("Use POST /escalas/gerar")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
@@ -55,6 +59,32 @@ public class EscalaController : ControllerBase
         }
 
         return Ok(retorno);
+    }
+
+    /// <summary>Gera preview de escala com token para persistência posterior.</summary>
+    [HttpPost("/escalas/gerar")]
+    public async Task<IActionResult> GerarEscala(GerarEscalaRequest request)
+    {
+        var retorno = await _escalaGeracaoService.GerarPreviewAsync(request);
+        if (!retorno.Sucess)
+            return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        return Ok(retorno.Object);
+    }
+
+    /// <summary>Persiste exatamente o lote exibido no preview.</summary>
+    [HttpPost("/escalas/preview/{token}/persistir")]
+    public async Task<IActionResult> PersistirPreview(string token)
+    {
+        var retorno = await _escalaGeracaoService.PersistirPreviewAsync(token);
+        if (!retorno.Sucess)
+        {
+            if (retorno.StatusCode == HttpStatusCode.NotFound)
+                return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+            if (retorno.StatusCode == HttpStatusCode.Gone)
+                return StatusCode(410, new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        }
+        return StatusCode((int)HttpStatusCode.Created, retorno.Object);
     }
 
     [HttpGet("/escalas")]
