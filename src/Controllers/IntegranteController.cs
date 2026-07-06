@@ -96,6 +96,8 @@ public class IntegranteController : ControllerBase
         {
             if (retorno.StatusCode == HttpStatusCode.NotFound)
                 return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+            if (retorno.StatusCode == HttpStatusCode.UnprocessableEntity)
+                return UnprocessableEntity(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
 
             return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
         }
@@ -116,6 +118,8 @@ public class IntegranteController : ControllerBase
         {
             if (retorno.StatusCode == HttpStatusCode.NotFound)
                 return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+            if (retorno.StatusCode == HttpStatusCode.UnprocessableEntity)
+                return UnprocessableEntity(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
 
             return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
         }

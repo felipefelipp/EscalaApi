@@ -99,6 +99,21 @@ public class Result<T> : Notifiable<Notification> //where T : class
         return new Result<T>(notifications, HttpStatusCode.BadRequest);
     }
 
+    public static Result<T> UnprocessableEntity(IReadOnlyCollection<Notification> notifications)
+    {
+        return new Result<T>(notifications, HttpStatusCode.UnprocessableEntity);
+    }
+
+    public static Result<T> Conflict(IReadOnlyCollection<Notification> notifications)
+    {
+        return new Result<T>(notifications, HttpStatusCode.Conflict);
+    }
+
+    public static Result<T> Gone(IReadOnlyCollection<Notification> notifications)
+    {
+        return new Result<T>(notifications, HttpStatusCode.Gone);
+    }
+
     public static Result<T> InternalServerError(IReadOnlyCollection<Notification> notifications)
     {
         return new Result<T>(notifications, HttpStatusCode.InternalServerError);

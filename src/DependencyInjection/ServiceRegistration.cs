@@ -2,6 +2,7 @@ using EscalaApi.Repositories;
 using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Services;
 using EscalaApi.Services.Interfaces;
+using EscalaApi.Services.Rotacao;
 using EscalaApi.Data;
 
 namespace EscalaApi.DependencyInjection;
@@ -12,25 +13,42 @@ public static class ServiceRegistration
     {
         DatabaseContext.Initialize(configuration);
 
-        //Integrante
         services.AddScoped<IIntegranteService, IntegranteService>();
         services.AddScoped<IIntegranteRepository, IntegranteRepository>();
 
-        
-        //Escala
         services.AddScoped<IEscalaManagerService, EscalaManager>();
         services.AddScoped<IEscalaRepository, EscalaRepository>();
+        services.AddScoped<IEscalaGeracaoService, EscalaGeracaoService>();
 
-        
-        //Tipo integrante 
         services.AddScoped<ITipoIntegranteRepository, TipoIntegranteRepository>();
-        
-        //Dias disponiveis
         services.AddScoped<IIntegranteDiasDisponiveisRepository, IntegranteDiasDisponiveisRepository>();
 
-        //Tipo Escala
+        services.AddScoped<ITipoIntegranteCatalogoRepository, TipoIntegranteCatalogoRepository>();
+        services.AddScoped<ITipoIntegranteCatalogoService, TipoIntegranteCatalogoService>();
+
         services.AddScoped<ITipoEscalaRepository, TipoEscalaRepository>();
-        
+
+        services.AddScoped<IEstrategiaAlgoritmoService, EstrategiaAlgoritmoService>();
+        services.AddScoped<IEstrategiaAlgoritmoRepository, EstrategiaAlgoritmoRepository>();
+        services.AddScoped<ITipoGranularidadeService, TipoGranularidadeService>();
+        services.AddScoped<ITipoGranularidadeRepository, TipoGranularidadeRepository>();
+        services.AddScoped<IParametroSistemaService, ParametroSistemaService>();
+        services.AddScoped<IParametroSistemaRepository, ParametroSistemaRepository>();
+
+        services.AddScoped<IConfiguracaoEscalaRepository, ConfiguracaoEscalaRepository>();
+        services.AddScoped<IConfiguracaoEscalaService, ConfiguracaoEscalaService>();
+
+        services.AddScoped<IArmazenamentoPreview, PreviewRepository>();
+        services.AddScoped<PreviewRepository>();
+        services.AddSingleton<ResolvedorEstrategia>();
+        services.AddSingleton<CalculadorDeCarga>();
+        services.AddSingleton<RelatorioBalanceamento>();
+        services.AddScoped<SeletorDeIntegrante>();
+        services.AddScoped<GeradorDePreview>();
+        services.AddScoped<PersistidorDePreview>();
+
+        services.AddHostedService<PreviewCleanupHostedService>();
+
         return services;
     }
 }

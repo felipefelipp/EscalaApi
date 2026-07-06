@@ -35,6 +35,11 @@ public class EscalaRepository : IEscalaRepository
                 where.Add("Escalas.cd_tipo_escala = @Tipo");
                 parametros.Add("@Tipo", escalaFiltro.Tipo.Value, DbType.Int32);
             }
+            if (escalaFiltro.IdConfiguracao.HasValue)
+            {
+                where.Add("Escalas.id_configuracao = @IdConfiguracao");
+                parametros.Add("@IdConfiguracao", escalaFiltro.IdConfiguracao.Value, DbType.Int32);
+            }
 
             if (where.Count > 0)
                 query += " WHERE " + string.Join(" AND ", where);

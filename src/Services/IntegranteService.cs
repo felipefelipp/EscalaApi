@@ -14,14 +14,17 @@ public class IntegranteService : IIntegranteService
     IIntegranteRepository _integranteRepository;
     ITipoIntegranteRepository _tipoIntegranteRepository;
     IIntegranteDiasDisponiveisRepository _diasDisponiveisRepositoryRepository;
+    ITipoIntegranteCatalogoRepository _tipoIntegranteCatalogoRepository;
 
     public IntegranteService(IIntegranteRepository integranteRepository,
         ITipoIntegranteRepository tipoIntegranteRepository,
-        IIntegranteDiasDisponiveisRepository diasDisponiveisRepositoryRepository)
+        IIntegranteDiasDisponiveisRepository diasDisponiveisRepositoryRepository,
+        ITipoIntegranteCatalogoRepository tipoIntegranteCatalogoRepository)
     {
         _integranteRepository = integranteRepository;
         _tipoIntegranteRepository = tipoIntegranteRepository;
         _diasDisponiveisRepositoryRepository = diasDisponiveisRepositoryRepository;
+        _tipoIntegranteCatalogoRepository = tipoIntegranteCatalogoRepository;
     }
 
     public async Task<Result<Integrante>> ObterIntegrantePorId(int idIntegrante)
@@ -158,6 +161,15 @@ public class IntegranteService : IIntegranteService
     public async Task<Result<Integrante>> InserirIntegrante(IntegranteRequest integranteRequest)
     {
         var erros = new List<Notification>();
+
+        var tiposCadastrados = await _tipoIntegranteCatalogoRepository.ContarAtivosAsync();
+        if (tiposCadastrados == 0)
+        {
+            erros.Add(new Notification("TipoIntegrante",
+                "Cadastre ao menos um tipo de integrante antes de prosseguir."));
+            return Result<Integrante>.UnprocessableEntity(erros);
+        }
+
         var integranteDto = integranteRequest.ParaDtos();
 
         if (integranteDto == null || integranteDto.Count == 0)

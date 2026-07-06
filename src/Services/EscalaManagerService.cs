@@ -16,13 +16,17 @@ public class EscalaManager : IEscalaManagerService
     public IEscalaRepository _escalaRepository;
     public ITipoEscalaRepository _tipoEscalaRepository;
 
+    public ITipoIntegranteCatalogoRepository _tipoIntegranteCatalogoRepository;
+
     public EscalaManager(IIntegranteRepository integranteRepository,
                          IEscalaRepository escalaRepository,
-                         ITipoEscalaRepository tipoEscalaRepository)
+                         ITipoEscalaRepository tipoEscalaRepository,
+                         ITipoIntegranteCatalogoRepository tipoIntegranteCatalogoRepository)
     {
         _integranteRepository = integranteRepository;
         _escalaRepository = escalaRepository;
         _tipoEscalaRepository = tipoEscalaRepository;
+        _tipoIntegranteCatalogoRepository = tipoIntegranteCatalogoRepository;
     }
 
     public async Task<Result<EscalaResponse>> ObterEscalaPorId(int idEscala)
@@ -274,87 +278,101 @@ public class EscalaManager : IEscalaManagerService
         var erros = new List<Notification>();
         if (csvContent == null || csvContent.Length == 0)
         {
-            erros.Add(new Notification("Arquivo", $"Arquivo não enviado."));
+            erros.Add(new Notification("Arquivo", "Arquivo não enviado."));
             return Result<EscalaResponse>.BadRequest(erros);
         }
 
-        var anonymousTypeDefinition = new
-        {
-            Data = string.Empty,
-            Ministro = string.Empty,
-            BackingVocal = string.Empty,
-            BackingVocal2 = string.Empty,
-            Bateria = string.Empty,
-            ContraBaixo = string.Empty,
-            Teclado = string.Empty,
-            Violao = string.Empty
-        };
+        var tiposCatalogo = await _tipoIntegranteCatalogoRepository.ListarAsync();
+        var mapaTipos = tiposCatalogo.ToDictionary(t => t.Nome, t => t.IdTipoIntegrante, StringComparer.OrdinalIgnoreCase);
 
         using var stream = csvContent.OpenReadStream();
         using var reader = new StreamReader(stream);
         using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-        var records = csv.GetRecords(anonymousTypeDefinition).ToList();
 
-        foreach (var record in records)
+        await csv.ReadAsync();
+        csv.ReadHeader();
+        var headers = csv.HeaderRecord ?? [];
+
+        if (!headers.Any(h => h.Equals("Data", StringComparison.OrdinalIgnoreCase)))
         {
-            foreach (var prop in record.GetType().GetProperties())
-            {
-                if (prop.Name != "Data" && prop.GetValue(record)?.ToString() != "null")
-                {
-                    var data = DateTime.ParseExact(record.Data, "dd/MM/yyyy", CultureInfo.InvariantCulture).Date;
-                    var tipo = prop.Name switch
-                    {
-                        "Ministro" => 1,
-                        "BackingVocal" => 2,
-                        "BackingVocal2" => 3,
-                        "Teclado" => 4,
-                        "Violao" => 5,
-                        "ContraBaixo" => 6,
-                        "Guitarra" => 7,
-                        "Bateria" => 8,
-                        _ => 0
-                    };
+            erros.Add(new Notification("Arquivo", "Coluna obrigatória 'Data' não encontrada."));
+            return Result<EscalaResponse>.BadRequest(erros);
+        }
 
-                    var escalaExistente = await _escalaRepository.ObterEscalas(new EscalaFiltro
+        var colunasInvalidas = headers
+            .Where(h => !h.Equals("Data", StringComparison.OrdinalIgnoreCase) && !mapaTipos.ContainsKey(h))
+            .ToList();
+
+        if (colunasInvalidas.Count > 0)
+        {
+            erros.Add(new Notification("ColunasInvalidas",
+                $"Colunas desconhecidas: {string.Join(", ", colunasInvalidas)}"));
+            return Result<EscalaResponse>.BadRequest(erros);
+        }
+
+        while (await csv.ReadAsync())
+        {
+            var dataStr = csv.GetField("Data");
+            if (string.IsNullOrWhiteSpace(dataStr)) continue;
+
+            var data = DateTime.ParseExact(dataStr, "dd/MM/yyyy", CultureInfo.InvariantCulture).Date;
+
+            foreach (var header in headers.Where(h => !h.Equals("Data", StringComparison.OrdinalIgnoreCase)))
+            {
+                var nomeIntegrante = csv.GetField(header);
+                if (string.IsNullOrWhiteSpace(nomeIntegrante) || nomeIntegrante == "null") continue;
+
+                var tipo = mapaTipos[header];
+                var escalaExistente = await _escalaRepository.ObterEscalas(new EscalaFiltro
+                {
+                    DataInicio = data,
+                    DataFim = data,
+                    Tipo = tipo
+                });
+
+                if (escalaExistente?.Count > 0 && substituirExistentes)
+                {
+                    var (integrantes, _) = await _integranteRepository.ObterIntegrantes(new IntegranteFiltro
                     {
-                        DataInicio = data,
-                        DataFim = data,
-                        Tipo = tipo
+                        Nome = nomeIntegrante,
+                        TipoIntegrante = tipo
                     });
 
-                    if (escalaExistente?.Count > 0 && substituirExistentes)
+                    if (integrantes?.Count > 0)
                     {
-                        var escalaAtualizada = await _escalaRepository.AtualizarEscala(escalaExistente[0].IdEscala, new EscalaDto
+                        await _escalaRepository.AtualizarEscala(escalaExistente[0].IdEscala, new EscalaDto
                         {
                             IdEscala = escalaExistente[0].IdEscala,
                             Data = data,
                             TipoEscala = tipo,
-                            IdIntegrante = escalaExistente[0].IdIntegrante
+                            IdIntegrante = integrantes[0].IdIntegrante
                         });
                     }
-                    else if (escalaExistente == null || escalaExistente.Count == 0)
+                }
+                else if (escalaExistente == null || escalaExistente.Count == 0)
+                {
+                    var (integrantes, _) = await _integranteRepository.ObterIntegrantes(new IntegranteFiltro
                     {
-                        var (integrantes, total) = await _integranteRepository.ObterIntegrantes(new IntegranteFiltro
-                        {
-                            Nome = prop.GetValue(record)?.ToString(),
-                            TipoIntegrante = tipo
-                        });
+                        Nome = nomeIntegrante,
+                        TipoIntegrante = tipo
+                    });
 
-                        if (integrantes?.Count > 0)
+                    if (integrantes?.Count > 0)
+                    {
+                        await _escalaRepository.InserirEscala(new List<EscalaDto>
                         {
-                            var novaEscala = new EscalaDto
+                            new()
                             {
                                 Data = data,
                                 TipoEscala = tipo,
                                 IdIntegrante = integrantes[0].IdIntegrante
-                            };
-
-                            await _escalaRepository.InserirEscala(new List<EscalaDto> { novaEscala });
-                        }
+                            }
+                        });
                     }
                 }
             }
         }
+
         return Result<EscalaResponse>.Ok(new EscalaResponse());
     }
 }
