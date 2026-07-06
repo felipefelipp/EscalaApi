@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EscalaApi.Controllers;
 
+/// <summary>Consulta, edição manual, geração automática e importação de escalas.</summary>
 [ApiController]
 [Route("[controller]")]
+[Tags("Escalas")]
 public class EscalaController : ControllerBase
 {
     private readonly IEscalaManagerService _escalaManagerService;
@@ -20,6 +22,7 @@ public class EscalaController : ControllerBase
         _escalaGeracaoService = escalaGeracaoService;
     }
 
+    /// <summary>Obtém uma escala persistida pelo ID, com integrantes alocados em cada tipo.</summary>
     [HttpGet("/escalas/{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
@@ -40,6 +43,7 @@ public class EscalaController : ControllerBase
         return Ok(retorno);
     }
 
+    /// <summary>Gera escala com algoritmo legado (monolítico). Prefira <c>POST /escalas/gerar</c>.</summary>
     [HttpPost("/escalas")]
     [Obsolete("Use POST /escalas/gerar")]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -61,8 +65,10 @@ public class EscalaController : ControllerBase
         return Ok(retorno);
     }
 
-    /// <summary>Gera preview de escala com token para persistência posterior.</summary>
+    /// <summary>Executa o algoritmo e retorna preview com token. Não grava — use persistir para confirmar.</summary>
     [HttpPost("/escalas/gerar")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GerarEscala(GerarEscalaRequest request)
     {
         var retorno = await _escalaGeracaoService.GerarPreviewAsync(request);
@@ -71,8 +77,12 @@ public class EscalaController : ControllerBase
         return Ok(retorno.Object);
     }
 
-    /// <summary>Persiste exatamente o lote exibido no preview.</summary>
+    /// <summary>Grava o lote do preview. Token expira por TTL; após persistir, estratégia fica imutável.</summary>
     [HttpPost("/escalas/preview/{token}/persistir")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status410Gone)]
     public async Task<IActionResult> PersistirPreview(string token)
     {
         var retorno = await _escalaGeracaoService.PersistirPreviewAsync(token);
@@ -87,6 +97,7 @@ public class EscalaController : ControllerBase
         return StatusCode((int)HttpStatusCode.Created, retorno.Object);
     }
 
+    /// <summary>Lista escalas persistidas. Aceita filtros por período, tipo e integrante via query string.</summary>
     [HttpGet("/escalas")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status500InternalServerError)]
@@ -105,6 +116,7 @@ public class EscalaController : ControllerBase
         return Ok(retorno);
     }
 
+    /// <summary>Altera manualmente os integrantes de um slot de escala já persistido.</summary>
     [HttpPut("/escalas/{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
@@ -125,7 +137,12 @@ public class EscalaController : ControllerBase
         return Ok(retorno);
     }
 
+    /// <summary>Importa escalas em lote via CSV. Colunas = nomes dos tipos no catálogo.</summary>
+    /// <param name="file">Arquivo CSV com coluna de data e uma coluna por tipo.</param>
+    /// <param name="substituirExistentes">Se true, sobrescreve slots já existentes na mesma data.</param>
     [HttpPost("/escalas/import-csv")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ImportCsv(IFormFile file, bool substituirExistentes = false)
     {
         var result = await _escalaManagerService.ImportarEscalasDeCsv(file, substituirExistentes);

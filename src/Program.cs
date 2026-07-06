@@ -1,17 +1,27 @@
+using System.Reflection;
 using EscalaApi.DependencyInjection;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "EscalaApi",
         Version = "v2",
-        Description = "Plataforma genérica de escalas. Configure tipos, integrantes, estratégia e gere preview antes de persistir."
+        Description = """
+            Plataforma genérica de escalas.
+
+            Fluxo típico: tipos → integrantes → estratégia → configuração → gerar preview → persistir.
+            """
     });
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath);
 });
 builder.Services.AddProjectServices(builder.Configuration);
 builder.Services.AddControllers()
@@ -20,21 +30,17 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
-
-
 var app = builder.Build();
-    
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Escala API V1");
-            c.RoutePrefix = string.Empty; // Redireciona para Swagger automaticamente
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "EscalaApi v2");
+            c.RoutePrefix = string.Empty;
         });
 }
 
-// app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();
