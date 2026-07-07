@@ -23,4 +23,4 @@ ENV ASPNETCORE_ENVIRONMENT=Development \
     DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=1 \
     DOTNET_WATCH_SUPPRESS_MSBUILD_INCREMENTALISM=1 \
     DOTNET_WATCH_RESTART_ON_RUDE_EDIT=1
-ENTRYPOINT ["dotnet", "watch", "run", "--no-launch-profile"]
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "EscalaApi.csproj", "--no-launch-profile"]

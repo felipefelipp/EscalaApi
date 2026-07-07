@@ -18,13 +18,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore src/EscalaApi.sln
+        run: dotnet restore EscalaApi.sln
 
       - name: Build
-        run: dotnet build src/EscalaApi.sln --configuration Release --no-restore
+        run: dotnet build EscalaApi.sln --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test src/EscalaApi.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test EscalaApi.sln --configuration Release --no-build --verbosity normal
 
   docker-build:
     runs-on: ubuntu-latest
