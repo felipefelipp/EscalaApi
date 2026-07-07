@@ -1,11 +1,11 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EscalaApi", "EscalaApi.csproj", "{36652ADA-C150-45F1-A526-F174C4408C34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EscalaApi", "src\EscalaApi.csproj", "{36652ADA-C150-45F1-A526-F174C4408C34}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EscalaApi.Tests", "..\tests\EscalaApi.Tests\EscalaApi.Tests.csproj", "{94BA3F43-0697-4D9F-B632-6781D3850F68}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EscalaApi.Tests", "tests\EscalaApi.Tests\EscalaApi.Tests.csproj", "{94BA3F43-0697-4D9F-B632-6781D3850F68}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
