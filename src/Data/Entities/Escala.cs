@@ -1,6 +1,5 @@
 using EscalaApi.Utils.Enums;
 using EscalaApi.Utils.Extensions;
-using Microsoft.OpenApi.Extensions;
 
 namespace EscalaApi.Data.Entities;
 
