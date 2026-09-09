@@ -4,4 +4,5 @@ public sealed class GerarEscalaRequest
 {
     public int ConfiguracaoEscalaId { get; set; }
     public bool ImpedirMultiplosTiposMesmoDia { get; set; } = true;
+    public bool Persistir { get; set; } = false;
 }

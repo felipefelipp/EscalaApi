@@ -1,5 +1,4 @@
 using EscalaApi.Data.Entities;
-using EscalaApi.Services.Rotacao.Estrategias;
 using EscalaApi.Services.Rotacao.Models;
 
 namespace EscalaApi.Services.Rotacao;
@@ -20,37 +19,33 @@ public sealed class RelatorioBalanceamento
         var todasEscalas = lote.TodasAsEscalas(historico).ToList();
         var integrantesLista = integrantes.ToList();
         var itens = new List<BalanceamentoItem>();
+        var contextos = ObterContextosUnicos(estrategia, tiposIntegrante, datas);
 
-        foreach (var tipoId in tiposIntegrante)
+        foreach (var contexto in contextos)
         {
-            if (estrategia is ContextualPorDiaSemana)
-            {
-                var diasNoPeriodo = datas.Select(d => d.DayOfWeek).Distinct();
-                foreach (var dia in diasNoPeriodo)
-                {
-                    var contexto = ContextoRotacao.PorTipoEDia(tipoId, dia);
-                    itens.Add(CriarItem(tipoId, dia, contexto, todasEscalas, integrantesLista));
-                }
-            }
-            else
-            {
-                var contexto = ContextoRotacao.PorTipo(tipoId);
-                itens.Add(CriarItem(tipoId, null, contexto, todasEscalas, integrantesLista));
-            }
+            itens.Add(CriarItem(contexto, todasEscalas, integrantesLista));
         }
 
         return itens;
     }
 
+    private static IEnumerable<ContextoRotacao> ObterContextosUnicos(
+        IEstrategiaContagem estrategia,
+        List<int> tiposIntegrante,
+        List<DateTime> datas)
+    {
+        return tiposIntegrante
+            .SelectMany(tipoId => datas.Select(data => estrategia.ObterContexto(tipoId, data)))
+            .Distinct();
+    }
+
     private static BalanceamentoItem CriarItem(
-        int tipoId,
-        DayOfWeek? dia,
         ContextoRotacao contexto,
         List<Escala> todasEscalas,
         List<Integrante> integrantes)
     {
         var contagens = integrantes
-            .Where(i => i.TipoIntegrante.Contains(tipoId))
+            .Where(i => i.TipoIntegrante.Contains(contexto.TipoId))
             .Select(i => new ContagemIntegrante
             {
                 IntegranteId = i.IdIntegrante,
@@ -66,8 +61,8 @@ public sealed class RelatorioBalanceamento
 
         return new BalanceamentoItem
         {
-            TipoIntegranteId = tipoId,
-            DiaSemana = dia.HasValue ? ObterNomeDia(dia.Value) : null,
+            TipoIntegranteId = contexto.TipoId,
+            DiaSemana = contexto.DiaSemana.HasValue ? ObterNomeDia(contexto.DiaSemana.Value) : null,
             Contagens = contagens,
             DesvioMaximo = desvio
         };

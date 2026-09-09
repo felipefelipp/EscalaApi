@@ -1056,6 +1056,34 @@ GET    /configuracoes-escala/{id}/datas-expandidas
 ```
 
 **POST /configuracoes-escala**
+
+Cria o molde usado por `POST /escalas/gerar`: período, dias em que a escala se repete, tipos de integrante e estratégia de rotação.
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `nome` | string | sim | Nome amigável (ex.: "Q1 2026") |
+| `dataInicio` / `dataFim` | date | sim | Período a expandir; limitado por `range_maximo_escala` |
+| `idEstrategiaAlgoritmo` | int | sim | Critério de rotação (`GET /estrategias-algoritmo`) |
+| `idTipoGranularidade` | int | não (default 1) | Interpretação de `valoresRecorrentes` (`GET /tipos-granularidade`) |
+| `valoresRecorrentes` | int[] | sim (≥1) | Slots recorrentes no período (ver tabela abaixo) |
+| `tiposIntegrante` | int[] | sim (≥1) | Papéis incluídos na rotação (`GET /tipos-integrante`) |
+
+**`valoresRecorrentes` com granularidade `dias_semana` (id 1)**
+
+Define em quais dias da semana a escala ocorre entre `dataInicio` e `dataFim`. Valores = `DayOfWeek`:
+
+| Valor | Dia |
+|------:|-----|
+| 0 | Domingo |
+| 1 | Segunda |
+| 2 | Terça |
+| 3 | Quarta |
+| 4 | Quinta |
+| 5 | Sexta |
+| 6 | Sábado |
+
+Ex.: `[3, 0]` → apenas quartas e domingos. Confira o resultado em `GET /configuracoes-escala/{id}/datas-expandidas`.
+
 ```json
 {
   "nome": "Q1 2026",
@@ -1067,7 +1095,8 @@ GET    /configuracoes-escala/{id}/datas-expandidas
   "tiposIntegrante": [1, 2]
 }
 ```
-> `valoresRecorrentes` para `dias_semana`: 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb.
+
+**Erros comuns:** `422` se faltar nome/dias/tipos, datas invertidas, estratégia/granularidade inválida ou intervalo acima do range máximo.
 
 ---
 

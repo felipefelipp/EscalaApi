@@ -18,5 +18,4 @@ public interface IConfiguracaoEscalaService
 public interface IEscalaGeracaoService
 {
     Task<Result<ResultadoPreview>> GerarPreviewAsync(GerarEscalaRequest request);
-    Task<Result<PersistenciaPreviewResultado>> PersistirPreviewAsync(string token);
 }

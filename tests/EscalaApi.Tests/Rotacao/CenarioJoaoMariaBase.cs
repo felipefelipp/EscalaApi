@@ -36,12 +36,10 @@ public abstract class CenarioJoaoMariaBase
     protected static GeradorDePreview CriarGerador()
     {
         var resolvedor = new ResolvedorEstrategia();
-        var calculador = new CalculadorDeCarga();
-        var seletor = new SeletorDeIntegrante(calculador, resolvedor);
+        var seletor = new SeletorDeIntegrante();
         var relatorio = new RelatorioBalanceamento();
-        var armazenamento = new ArmazenamentoPreviewMemoria();
 
-        return new GeradorDePreview(resolvedor, seletor, relatorio, armazenamento);
+        return new GeradorDePreview(resolvedor, seletor, relatorio);
     }
 
     protected static Dictionary<DateTime, int> ParaMapaAtribuicoes(ResultadoPreview resultado) =>

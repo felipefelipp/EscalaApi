@@ -11,19 +11,13 @@ namespace EscalaApi.Services;
 public class ConfiguracaoEscalaService : IConfiguracaoEscalaService
 {
     private readonly IConfiguracaoEscalaRepository _repository;
-    private readonly IEstrategiaAlgoritmoRepository _estrategiaRepository;
-    private readonly ITipoGranularidadeRepository _granularidadeRepository;
     private readonly IParametroSistemaRepository _parametroRepository;
 
     public ConfiguracaoEscalaService(
         IConfiguracaoEscalaRepository repository,
-        IEstrategiaAlgoritmoRepository estrategiaRepository,
-        ITipoGranularidadeRepository granularidadeRepository,
         IParametroSistemaRepository parametroRepository)
     {
         _repository = repository;
-        _estrategiaRepository = estrategiaRepository;
-        _granularidadeRepository = granularidadeRepository;
         _parametroRepository = parametroRepository;
     }
 
@@ -71,14 +65,6 @@ public class ConfiguracaoEscalaService : IConfiguracaoEscalaService
         if (existente is null)
             return Result<ConfiguracaoEscala>.NotFound([new Notification("Id", "Configuração não encontrada.")]);
 
-        if (existente.EstrategiaImutavel && existente.IdEstrategiaAlgoritmo != request.IdEstrategiaAlgoritmo)
-        {
-            return Result<ConfiguracaoEscala>.Conflict([
-                new Notification("EstrategiaImutavel",
-                    "Esta configuração já possui escalas persistidas. Crie uma nova configuração a partir de hoje para usar outra estratégia.")
-            ]);
-        }
-
         var erros = await ValidarAsync(request);
         if (erros.Count > 0) return Result<ConfiguracaoEscala>.UnprocessableEntity(erros);
 
@@ -103,18 +89,6 @@ public class ConfiguracaoEscalaService : IConfiguracaoEscalaService
             erros.Add(new Notification("ValoresRecorrentes", "Informe ao menos um dia recorrente."));
         if (request.TiposIntegrante.Count == 0)
             erros.Add(new Notification("TiposIntegrante", "Informe ao menos um tipo de integrante."));
-
-        var granularidadeId = request.IdTipoGranularidade ?? 1;
-        var granularidade = await _granularidadeRepository.ObterPorIdAsync(granularidadeId);
-        if (granularidade is null)
-            erros.Add(new Notification("IdTipoGranularidade", "Tipo de granularidade inválido."));
-        else if (!granularidade.Ativo)
-            erros.Add(new Notification("GranularidadeNaoSuportada",
-                $"O tipo de granularidade '{granularidade.Codigo}' ainda não está disponível."));
-
-        var estrategia = await _estrategiaRepository.ObterPorIdAsync(request.IdEstrategiaAlgoritmo);
-        if (estrategia is null || !estrategia.Ativo)
-            erros.Add(new Notification("IdEstrategiaAlgoritmo", "Estratégia de algoritmo inválida."));
 
         var parametro = await _parametroRepository.ObterPorChaveAsync("range_maximo_escala");
         var rangeCodigo = string.IsNullOrWhiteSpace(parametro?.Valor) ? "mensal" : parametro!.Valor;

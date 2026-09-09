@@ -13,6 +13,5 @@ public interface IConfiguracaoEscalaRepository
     Task InserirTiposAsync(int idConfiguracao, IEnumerable<int> tipos);
     Task<List<int>> ObterSlotsAsync(int id);
     Task<List<int>> ObterTiposAsync(int id);
-    Task MarcarEstrategiaImutavelAsync(int id);
     Task RemoverSlotsETiposAsync(int id);
 }

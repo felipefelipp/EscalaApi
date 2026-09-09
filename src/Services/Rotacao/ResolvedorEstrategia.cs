@@ -1,35 +1,24 @@
-using EscalaApi.Data.Entities;
 using EscalaApi.Services.Rotacao.Estrategias;
 
 namespace EscalaApi.Services.Rotacao;
 
 /// <summary>
-/// Resolve a implementação de estratégia pelo código cadastrado em <c>estrategia_algoritmo</c>.
+/// Fornece a implementação da estratégia de rotação (padrão: contextual por dia da semana).
 /// </summary>
 public sealed class ResolvedorEstrategia
 {
     private readonly ContextualPorDiaSemana _contextual = new();
     private readonly Global _global = new();
 
-    public IEstrategiaContagem Resolver(string codigo) => codigo switch
+    public IEstrategiaContagem Resolver(string? codigo = null) => codigo switch
     {
-        "contextual_dia_semana" => _contextual,
         "global" => _global,
-        _ => throw new ArgumentException($"Estratégia de algoritmo desconhecida: '{codigo}'.", nameof(codigo))
+        _ => _contextual
     };
 
     public IEstrategiaContagem ResolverPorId(int idEstrategiaAlgoritmo) => idEstrategiaAlgoritmo switch
     {
-        1 => _contextual,
         2 => _global,
-        _ => throw new ArgumentException($"Estratégia de algoritmo desconhecida: id {idEstrategiaAlgoritmo}.", nameof(idEstrategiaAlgoritmo))
+        _ => _contextual
     };
-
-    public ContextoRotacao ObterContextoDesempate(IEstrategiaContagem estrategia, int tipoId, DateTime data) =>
-        estrategia switch
-        {
-            ContextualPorDiaSemana contextual => contextual.ObterContexto(tipoId, data),
-            Global global => global.ObterContexto(tipoId),
-            _ => ContextoRotacao.PorTipo(tipoId)
-        };
 }

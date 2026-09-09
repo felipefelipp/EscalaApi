@@ -17,4 +17,9 @@ public interface IEstrategiaContagem
         DateTime data,
         IEnumerable<Escala> historico,
         LoteDeEscalas lote);
+
+    /// <summary>
+    /// Contexto usado para contagem, desempate e relatório de balanceamento.
+    /// </summary>
+    ContextoRotacao ObterContexto(int tipoId, DateTime data);
 }

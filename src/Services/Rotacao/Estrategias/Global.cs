@@ -14,11 +14,12 @@ public sealed class Global : IEstrategiaContagem
         IEnumerable<Escala> historico,
         LoteDeEscalas lote)
     {
-        var contexto = ContextoRotacao.PorTipo(tipoId);
+        var contexto = ObterContexto(tipoId, data);
 
         return lote.TodasAsEscalas(historico).Count(e =>
             contexto.CorrespondeIntegrante(e, integrante));
     }
 
-    public ContextoRotacao ObterContexto(int tipoId) => ContextoRotacao.PorTipo(tipoId);
+    public ContextoRotacao ObterContexto(int tipoId, DateTime data) =>
+        ContextoRotacao.PorTipo(tipoId);
 }

@@ -16,10 +16,8 @@ docker-compose up -d
 
 1. `POST /tipos-integrante` — cadastrar papéis/funções
 2. `POST /integrantes` — cadastrar pessoas com tipos e disponibilidade
-3. `GET /estrategias-algoritmo` — escolher critério de rotação
-4. `POST /configuracoes-escala` — definir período, dias e tipos
-5. `POST /escalas/gerar` — gerar preview (retorna token)
-6. `POST /escalas/preview/{token}/persistir` — salvar escala
+3. `POST /configuracoes-escala` — definir período, dias recorrentes (`valoresRecorrentes`: 0=Dom…6=Sáb) e tipos
+4. `POST /escalas/gerar` — gerar preview direto na resposta HTTP (`persistir: false`) ou salvar diretamente (`persistir: true`)
 
 ## Documentação
 
@@ -37,13 +35,6 @@ GitHub Actions em `.github/workflows/ci.yml`:
 
 - `GET /parametros` — range máximo de datas (default: mensal)
 - `PUT /parametros/range-maximo` — alterar limite
-
-## Estratégias de algoritmo
-
-| Estratégia | Quando usar |
-|------------|-------------|
-| Contextual por dia da semana | Disponibilidades diferentes entre integrantes |
-| Contagem global | Carga total por pessoa é o critério |
 
 ---
 

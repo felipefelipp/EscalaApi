@@ -1,5 +1,4 @@
 using EscalaApi.Data.Entities;
-using EscalaApi.Data.Request;
 using EscalaApi.Mappers;
 using EscalaApi.Repositories.Interfaces;
 using EscalaApi.Services.Interfaces;
@@ -15,24 +14,18 @@ public class EscalaGeracaoService : IEscalaGeracaoService
     private readonly IConfiguracaoEscalaRepository _configuracaoRepository;
     private readonly IIntegranteRepository _integranteRepository;
     private readonly IEscalaRepository _escalaRepository;
-    private readonly IParametroSistemaRepository _parametroRepository;
     private readonly GeradorDePreview _geradorDePreview;
-    private readonly PersistidorDePreview _persistidorDePreview;
 
     public EscalaGeracaoService(
         IConfiguracaoEscalaRepository configuracaoRepository,
         IIntegranteRepository integranteRepository,
         IEscalaRepository escalaRepository,
-        IParametroSistemaRepository parametroRepository,
-        GeradorDePreview geradorDePreview,
-        PersistidorDePreview persistidorDePreview)
+        GeradorDePreview geradorDePreview)
     {
         _configuracaoRepository = configuracaoRepository;
         _integranteRepository = integranteRepository;
         _escalaRepository = escalaRepository;
-        _parametroRepository = parametroRepository;
         _geradorDePreview = geradorDePreview;
-        _persistidorDePreview = persistidorDePreview;
     }
 
     public async Task<Result<ResultadoPreview>> GerarPreviewAsync(GerarEscalaRequest request)
@@ -60,9 +53,6 @@ public class EscalaGeracaoService : IEscalaGeracaoService
         });
         var historico = historicoDto.ParaListaEscala();
 
-        var paramExp = await _parametroRepository.ObterPorChaveAsync("preview_expiracao_horas");
-        var horasExp = int.TryParse(paramExp?.Valor, out var h) ? h : 24;
-
         var parametros = new ParametrosGeracaoPreview
         {
             ConfiguracaoEscalaId = config.IdConfiguracao,
@@ -72,31 +62,21 @@ public class EscalaGeracaoService : IEscalaGeracaoService
             TiposIntegrante = config.TiposIntegrante,
             Integrantes = integrantes,
             Historico = historico,
-            CodigoEstrategia = config.CodigoEstrategia,
-            ImpedirMultiplosTiposMesmoDia = request.ImpedirMultiplosTiposMesmoDia,
-            HorasExpiracaoPreview = horasExp
+            CodigoEstrategia = "contextual_dia_semana",
+            ImpedirMultiplosTiposMesmoDia = request.ImpedirMultiplosTiposMesmoDia
         };
 
         var resultado = await _geradorDePreview.GerarAsync(parametros);
-        return Result<ResultadoPreview>.Ok(resultado);
-    }
 
-    public async Task<Result<PersistenciaPreviewResultado>> PersistirPreviewAsync(string token)
-    {
-        var resultado = await _persistidorDePreview.PersistirAsync(new PreviewPersistRequest { PreviewToken = token });
-
-        if (!resultado.Sucesso)
+        if (request.Persistir && resultado.Escalas.Count > 0)
         {
-            var msg = resultado.Mensagem ?? "Erro ao persistir preview.";
-            if (msg.Contains("expirou", StringComparison.OrdinalIgnoreCase))
-                return Result<PersistenciaPreviewResultado>.Gone([new Notification("TokenExpirado", msg)]);
-            if (msg.Contains("já foi persistido", StringComparison.OrdinalIgnoreCase))
-                return Result<PersistenciaPreviewResultado>.Gone([new Notification("JaPersistido", msg)]);
-            if (msg.Contains("não encontrado", StringComparison.OrdinalIgnoreCase))
-                return Result<PersistenciaPreviewResultado>.NotFound([new Notification("TokenInvalido", msg)]);
-            return Result<PersistenciaPreviewResultado>.BadRequest([new Notification("Preview", msg)]);
+            var dtos = resultado.Escalas.ParaListaEscalaDto();
+            foreach (var dto in dtos)
+                dto.IdConfiguracao = config.IdConfiguracao;
+
+            await _escalaRepository.InserirEscala(dtos);
         }
 
-        return Result<PersistenciaPreviewResultado>.Created(resultado);
+        return Result<ResultadoPreview>.Ok(resultado);
     }
 }

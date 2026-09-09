@@ -61,47 +61,68 @@ public class IntegranteRepository : IIntegranteRepository
 
         try
         {
-            string query = IntegranteScripts.ObterTodosOsintegrantes;
             var where = new List<string>();
             var parameters = new DynamicParameters();
 
-            if (filtro.TipoIntegrante > 0)
+            if (filtro.TipoIntegrante is > 0)
             {
-                where.Add("tipo_integrante.cd_tipo_integrante = @TipoIntegrante");
+                where.Add("integrante_tipo.cd_tipo_integrante = @TipoIntegrante");
                 parameters.Add("@TipoIntegrante", filtro.TipoIntegrante, DbType.Int32);
             }
 
-            if (filtro.DiaDisponivel >= 0)
+            if (filtro.DiaDisponivel.HasValue)
             {
                 where.Add("integrantes_dias_disponiveis.cd_dia_disponivel = @DiaDisponivel");
-                parameters.Add("@DiaDisponivel", filtro.DiaDisponivel, DbType.Int32);
+                parameters.Add("@DiaDisponivel", (int)filtro.DiaDisponivel.Value, DbType.Int32);
             }
 
-            if (filtro?.Nome?.Length > 0)
+            if (!string.IsNullOrWhiteSpace(filtro.Nome))
             {
                 where.Add("integrantes.desc_nome = @Nome");
                 parameters.Add("@Nome", filtro.Nome, DbType.String);
             }
 
-            if (where.Count > 0)
-                query += " WHERE " + string.Join(" AND ", where);
+            var whereClause = where.Count > 0
+                ? " WHERE " + string.Join(" AND ", where)
+                : string.Empty;
 
-            query += " ORDER BY integrantes.id_integrante";
+            var fromJoins = IntegranteScripts.FromIntegrantesComJoins;
 
-            if (filtro?.Skip > 0 || filtro?.Take > 0)
-                query += " OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
+            var countQuery = $@"
+                SELECT COUNT(DISTINCT integrantes.id_integrante)
+                {fromJoins}
+                {whereClause}";
+
+            var total = await connection.ExecuteScalarAsync<int>(countQuery, parameters);
 
             parameters.Add("@Skip", filtro.Skip, DbType.Int32);
             parameters.Add("@Take", filtro.Take, DbType.Int32);
 
+            // Pagina por integrante (ID distinto), depois carrega dias e tipos completos.
+            var idsCte = filtro.Take > 0
+                ? $@"
+                ;WITH PagedIds AS (
+                    SELECT DISTINCT integrantes.id_integrante
+                    {fromJoins}
+                    {whereClause}
+                    ORDER BY integrantes.id_integrante
+                    OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY
+                )"
+                : $@"
+                ;WITH PagedIds AS (
+                    SELECT DISTINCT integrantes.id_integrante
+                    {fromJoins}
+                    {whereClause}
+                )";
+
+            var query = idsCte + string.Format(
+                IntegranteScripts.SelecionarIntegrantesCompletosPorIds,
+                "PagedIds");
+
             var integrantes = await connection.QueryAsync<IntegranteDto>(query, parameters);
 
-            var total = await connection.ExecuteScalarAsync<int>(IntegranteScripts.Quantidadeintegrantes);
-
             if (integrantes == null || !integrantes.Any())
-            {
-                return ([], 0);
-            }
+                return ([], total);
 
             return (integrantes.ToList(), total);
         }

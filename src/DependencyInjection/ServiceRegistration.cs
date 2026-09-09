@@ -28,26 +28,16 @@ public static class ServiceRegistration
 
         services.AddScoped<ITipoEscalaRepository, TipoEscalaRepository>();
 
-        services.AddScoped<IEstrategiaAlgoritmoService, EstrategiaAlgoritmoService>();
-        services.AddScoped<IEstrategiaAlgoritmoRepository, EstrategiaAlgoritmoRepository>();
-        services.AddScoped<ITipoGranularidadeService, TipoGranularidadeService>();
-        services.AddScoped<ITipoGranularidadeRepository, TipoGranularidadeRepository>();
         services.AddScoped<IParametroSistemaService, ParametroSistemaService>();
         services.AddScoped<IParametroSistemaRepository, ParametroSistemaRepository>();
 
         services.AddScoped<IConfiguracaoEscalaRepository, ConfiguracaoEscalaRepository>();
         services.AddScoped<IConfiguracaoEscalaService, ConfiguracaoEscalaService>();
 
-        services.AddScoped<IArmazenamentoPreview, PreviewRepository>();
-        services.AddScoped<PreviewRepository>();
         services.AddSingleton<ResolvedorEstrategia>();
-        services.AddSingleton<CalculadorDeCarga>();
         services.AddSingleton<RelatorioBalanceamento>();
         services.AddScoped<SeletorDeIntegrante>();
         services.AddScoped<GeradorDePreview>();
-        services.AddScoped<PersistidorDePreview>();
-
-        services.AddHostedService<PreviewCleanupHostedService>();
 
         return services;
     }

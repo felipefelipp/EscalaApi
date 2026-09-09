@@ -7,15 +7,6 @@ namespace EscalaApi.Services.Rotacao;
 /// </summary>
 public sealed class SeletorDeIntegrante
 {
-    private readonly CalculadorDeCarga _calculadorDeCarga;
-    private readonly ResolvedorEstrategia _resolvedorEstrategia;
-
-    public SeletorDeIntegrante(CalculadorDeCarga calculadorDeCarga, ResolvedorEstrategia resolvedorEstrategia)
-    {
-        _calculadorDeCarga = calculadorDeCarga;
-        _resolvedorEstrategia = resolvedorEstrategia;
-    }
-
     public List<Integrante> ObterCandidatos(
         int tipoId,
         DateTime data,
@@ -46,7 +37,7 @@ public sealed class SeletorDeIntegrante
         var contagens = pool
             .Select(i => (
                 Integrante: i,
-                Contagem: _calculadorDeCarga.Calcular(estrategia, i, tipoId, data, historico, lote)))
+                Contagem: estrategia.Calcular(i, tipoId, data, historico, lote)))
             .ToList();
 
         var minContagem = contagens.Min(x => x.Contagem);
@@ -58,7 +49,7 @@ public sealed class SeletorDeIntegrante
         return Desempatar(empatados, estrategia, tipoId, data, historico, lote);
     }
 
-    private Integrante Desempatar(
+    private static Integrante Desempatar(
         List<Integrante> empatados,
         IEstrategiaContagem estrategia,
         int tipoId,
@@ -66,7 +57,7 @@ public sealed class SeletorDeIntegrante
         IEnumerable<Escala> historico,
         LoteDeEscalas lote)
     {
-        var contexto = _resolvedorEstrategia.ObterContextoDesempate(estrategia, tipoId, data);
+        var contexto = estrategia.ObterContexto(tipoId, data);
         var todasEscalas = lote.TodasAsEscalas(historico).ToList();
 
         return empatados

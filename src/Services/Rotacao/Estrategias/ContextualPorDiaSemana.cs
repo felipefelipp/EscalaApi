@@ -14,7 +14,7 @@ public sealed class ContextualPorDiaSemana : IEstrategiaContagem
         IEnumerable<Escala> historico,
         LoteDeEscalas lote)
     {
-        var contexto = ContextoRotacao.ParaData(tipoId, data);
+        var contexto = ObterContexto(tipoId, data);
 
         return lote.TodasAsEscalas(historico).Count(e =>
             contexto.CorrespondeIntegrante(e, integrante));

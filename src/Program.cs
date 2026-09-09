@@ -12,9 +12,9 @@ builder.Services.AddSwaggerGen(c =>
         Title = "EscalaApi",
         Version = "v2",
         Description = """
-            Plataforma genérica de escalas.
+            API de geração e gestão de escalas.
 
-            Fluxo típico: tipos → integrantes → estratégia → configuração → gerar preview → persistir.
+            Fluxo típico: tipos → integrantes → configuração → gerar escala (preview direto no JSON ou persistir).
             """
     });
 

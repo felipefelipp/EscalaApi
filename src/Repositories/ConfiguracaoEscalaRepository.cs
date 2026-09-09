@@ -17,8 +17,6 @@ public class ConfiguracaoEscalaRepository : IConfiguracaoEscalaRepository
         p.Add("@Nome", request.Nome);
         p.Add("@DataInicio", request.DataInicio.Date);
         p.Add("@DataFim", request.DataFim.Date);
-        p.Add("@IdEstrategia", request.IdEstrategiaAlgoritmo);
-        p.Add("@IdGranularidade", request.IdTipoGranularidade ?? 1);
         return await connection.ExecuteScalarAsync<int>(ConfiguracaoEscalaScripts.Inserir, p);
     }
 
@@ -53,9 +51,7 @@ public class ConfiguracaoEscalaRepository : IConfiguracaoEscalaRepository
             Id = id,
             Nome = request.Nome,
             DataInicio = request.DataInicio.Date,
-            DataFim = request.DataFim.Date,
-            IdEstrategia = request.IdEstrategiaAlgoritmo,
-            IdGranularidade = request.IdTipoGranularidade ?? 1
+            DataFim = request.DataFim.Date
         });
     }
 
@@ -88,10 +84,6 @@ public class ConfiguracaoEscalaRepository : IConfiguracaoEscalaRepository
         var result = await connection.QueryAsync<int>(ConfiguracaoEscalaScripts.ObterTipos, new { Id = id });
         return result.ToList();
     }
-
-    public async Task MarcarEstrategiaImutavelAsync(int id) =>
-        await DatabaseContext.GetConnection().ExecuteAsync(
-            ConfiguracaoEscalaScripts.MarcarEstrategiaImutavel, new { Id = id });
 
     public async Task RemoverSlotsETiposAsync(int id)
     {
