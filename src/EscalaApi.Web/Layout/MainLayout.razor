@@ -1,0 +1,65 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="2" Color="Color.Primary">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Class="ml-2 mr-1" />
+        <MudText Typo="Typo.h6" Class="ml-1 font-weight-bold">Escala Fácil</MudText>
+        <MudSpacer />
+        <MudTooltip Text="@(_isDarkMode ? "Modo Claro" : "Modo Escuro")">
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit"
+                           OnClick="@ToggleDarkMode" />
+        </MudTooltip>
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    
+    <MudMainContent Class="pt-16 px-4 px-md-8 pb-10">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = false;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#5c6bc0",
+            Secondary = "#26a69a",
+            AppbarBackground = "#3f51b5",
+            Background = "#f8f9fa",
+            Surface = "#ffffff"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#7986cb",
+            Secondary = "#4db6ac",
+            AppbarBackground = "#1a237e",
+            Background = "#121212",
+            Surface = "#1e1e1e"
+        }
+    };
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+}

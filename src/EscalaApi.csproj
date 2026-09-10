@@ -22,4 +22,11 @@
     <Folder Include="Data\Response\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="EscalaApi.Web/**" />
+    <Content Remove="EscalaApi.Web/**" />
+    <EmbeddedResource Remove="EscalaApi.Web/**" />
+    <None Remove="EscalaApi.Web/**" />
+  </ItemGroup>
+
 </Project>

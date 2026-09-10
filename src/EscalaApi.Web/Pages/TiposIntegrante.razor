@@ -1,0 +1,196 @@
+@page "/tipos-integrante"
+@inject TipoIntegranteApiService TipoService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <div>
+        <MudText Typo="Typo.h5" Class="font-weight-bold" Color="Color.Primary">
+            Tipos de Integrante (Catálogo)
+        </MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            Defina papéis, instrumentos e funções (ex: Bateria, Teclado, Vocalista) que participam das escalas.
+        </MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="@AbrirModalNovo">
+        Novo Tipo
+    </MudButton>
+</div>
+
+<MudCard Elevation="2">
+    <MudCardContent Class="pa-0">
+        <MudTable Items="@_tipos" Dense="true" Hover="true" Striped="true" Loading="@_loading" Filter="new Func<TipoIntegranteModel,bool>(FilterFunc)">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Funções Cadastradas</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="_searchString" Placeholder="Pesquisar por nome ou descrição..."
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0" Immediate="true" />
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Nome</MudTh>
+                <MudTh>Descrição</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh Class="text-right">Ações</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.IdTipoIntegrante</MudTd>
+                <MudTd DataLabel="Nome">
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                        @context.Nome
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Descrição">@(string.IsNullOrWhiteSpace(context.Descricao) ? "—" : context.Descricao)</MudTd>
+                <MudTd DataLabel="Status">
+                    @if (context.Ativo)
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small">Ativo</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Default" Size="Size.Small">Inativo</MudChip>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Ações" Class="text-right">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
+                                   OnClick="@(() => AbrirModalEdicao(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                   OnClick="@(() => ConfirmarExclusao(context))" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="pa-4 text-center mud-text-secondary">Nenhum tipo de integrante encontrado.</MudText>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager RowsPerPageString="Itens por página:" />
+            </PagerContent>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<!-- Diálogo de Criação / Edição -->
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(_editandoId.HasValue ? "Editar Tipo de Integrante" : "Novo Tipo de Integrante")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="@_formValido">
+            <MudTextField @bind-Value="_model.Nome" Label="Nome da Função *" Required="true"
+                          RequiredError="O nome é obrigatório" Margin="Margin.Dense" Class="mb-3" />
+            <MudTextField @bind-Value="_model.Descricao" Label="Descrição ou Observações"
+                          Lines="2" Margin="Margin.Dense" Class="mb-3" />
+            <MudSwitch @bind-Value="_model.Ativo" Label="Ativo no Catálogo" Color="Color.Success" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _dialogVisible = false)">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SalvarTipo" Disabled="@(!_formValido)">
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<TipoIntegranteModel> _tipos = [];
+    private bool _loading = true;
+    private string _searchString = "";
+    private bool _dialogVisible = false;
+    private int? _editandoId = null;
+    private TipoIntegranteRequest _model = new();
+    private MudForm? _form;
+    private bool _formValido;
+
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarTipos();
+    }
+
+    private async Task CarregarTipos()
+    {
+        _loading = true;
+        _tipos = await TipoService.ListarAsync();
+        _loading = false;
+    }
+
+    private bool FilterFunc(TipoIntegranteModel element)
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        if (element.Nome.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (!string.IsNullOrEmpty(element.Descricao) && element.Descricao.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private void AbrirModalNovo()
+    {
+        _editandoId = null;
+        _model = new TipoIntegranteRequest { Ativo = true };
+        _dialogVisible = true;
+    }
+
+    private void AbrirModalEdicao(TipoIntegranteModel tipo)
+    {
+        _editandoId = tipo.IdTipoIntegrante;
+        _model = new TipoIntegranteRequest
+        {
+            Nome = tipo.Nome,
+            Descricao = tipo.Descricao,
+            Ativo = tipo.Ativo
+        };
+        _dialogVisible = true;
+    }
+
+    private async Task SalvarTipo()
+    {
+        bool sucesso;
+        if (_editandoId.HasValue)
+        {
+            sucesso = await TipoService.AtualizarAsync(_editandoId.Value, _model);
+        }
+        else
+        {
+            sucesso = await TipoService.InserirAsync(_model);
+        }
+
+        if (sucesso)
+        {
+            Snackbar.Add("Tipo salvo com sucesso!", Severity.Success);
+            _dialogVisible = false;
+            await CarregarTipos();
+        }
+        else
+        {
+            Snackbar.Add("Erro ao salvar tipo. Verifique os dados.", Severity.Error);
+        }
+    }
+
+    private async Task ConfirmarExclusao(TipoIntegranteModel tipo)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Excluir Tipo",
+            $"Tem certeza que deseja excluir o tipo \"{tipo.Nome}\"?",
+            yesText: "Excluir", cancelText: "Cancelar");
+
+        if (result == true)
+        {
+            var sucesso = await TipoService.ExcluirAsync(tipo.IdTipoIntegrante);
+            if (sucesso)
+            {
+                Snackbar.Add("Tipo excluído com sucesso!", Severity.Success);
+                await CarregarTipos();
+            }
+            else
+            {
+                Snackbar.Add("Não foi possível excluir. Ele pode estar vinculado a integrantes ou configurações.", Severity.Error);
+            }
+        }
+    }
+}

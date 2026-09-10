@@ -30,7 +30,19 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowWebClient", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors("AllowWebClient");
 
 if (app.Environment.IsDevelopment())
 {
@@ -40,6 +52,7 @@ if (app.Environment.IsDevelopment())
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "EscalaApi v2");
             c.RoutePrefix = string.Empty;
         });
+    app.MapGet("/swagger", () => Results.Redirect("/"));
 }
 
 app.MapControllers();

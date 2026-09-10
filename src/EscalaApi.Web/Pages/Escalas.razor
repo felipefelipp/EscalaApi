@@ -1,0 +1,421 @@
+@page "/escalas"
+@inject EscalaApiService EscalaService
+@inject ConfiguracaoEscalaApiService ConfigService
+@inject TipoIntegranteApiService TipoService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<div class="d-flex flex-wrap justify-space-between align-center gap-2 mb-4">
+    <div>
+        <MudText Typo="Typo.h5" Class="font-weight-bold" Color="Color.Primary">
+            Gestão de Escalas
+        </MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            Gere escalas inteligentes com rotação balanceada, visualize o preview antes de salvar e consulte o histórico.
+        </MudText>
+    </div>
+    <div class="d-flex gap-2">
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.UploadFile"
+                   OnClick="@(() => _importarCsvVisible = true)">
+            Importar CSV
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoMode"
+                   OnClick="@AbrirModalGeracao">
+            Gerar Nova Escala
+        </MudButton>
+    </div>
+</div>
+
+<!-- Filtros de Consulta -->
+<MudCard Elevation="1" Class="mb-4 pa-3">
+    <MudGrid Spacing="2" Class="align-center">
+        <MudItem xs="12" sm="4" md="3">
+            <MudDatePicker Label="A partir de" @bind-Date="_filtroDataInicio"
+                           DateFormat="dd/MM/yyyy" Margin="Margin.Dense" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="4" md="3">
+            <MudDatePicker Label="Até" @bind-Date="_filtroDataFim"
+                           DateFormat="dd/MM/yyyy" Margin="Margin.Dense" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="4" md="3">
+            <MudSelect T="int?" Label="Função" @bind-Value="_filtroTipo" Margin="Margin.Dense" Clearable="true">
+                <MudSelectItem T="int?" Value="@((int?)null)">Todas as Funções</MudSelectItem>
+                @foreach (var tipo in _catalogoTipos)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)tipo.IdTipoIntegrante)">@tipo.Nome</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="3" Class="d-flex gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@CarregarEscalas"
+                       StartIcon="@Icons.Material.Filled.FilterAlt">
+                Filtrar
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@LimparFiltros">
+                Limpar
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudCard>
+
+<!-- Tabela de Escalas Persistidas -->
+<MudCard Elevation="2">
+    <MudCardContent Class="pa-0">
+        <MudTable Items="@_escalas" Dense="true" Hover="true" Striped="true" Loading="@_loading">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Escalas Persistidas (@_escalas.Count slots)</MudText>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Data</MudTh>
+                <MudTh>Dia da Semana</MudTh>
+                <MudTh>Função / Papel</MudTh>
+                <MudTh>Integrante Escalado</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Data">
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Color="Color.Primary" />
+                        <span class="font-weight-bold">
+                            @(context.Data?.ToString("dd/MM/yyyy") ?? "—")
+                        </span>
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Dia">
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small" Variant="Variant.Outlined">
+                        @context.Dia
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Função">
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">
+                        @context.DescricaoTipoEscala
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Integrante">
+                    <div class="d-flex align-center gap-2">
+                        <MudAvatar Size="Size.Small" Color="Color.Secondary">
+                            @(string.IsNullOrWhiteSpace(context.NomeIntegrante) ? "?" : context.NomeIntegrante[0].ToString().ToUpper())
+                        </MudAvatar>
+                        <span class="font-weight-medium">@context.NomeIntegrante</span>
+                    </div>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="pa-6 text-center mud-text-secondary">
+                    Nenhuma escala encontrada para os filtros selecionados. Use o botão <b>"Gerar Nova Escala"</b> para criar a primeira!
+                </MudText>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager RowsPerPageString="Linhas por página:" />
+            </PagerContent>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<!-- Diálogo Assistente de Geração com Preview -->
+<MudDialog @bind-Visible="_gerarDialogVisible" Options="_gerarDialogOptions">
+    <TitleContent>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.AutoMode" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Assistente de Geração de Escala</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+            Selecione a configuração desejada. Você poderá conferir o balanceamento de participações antes de salvar definitivamente.
+        </MudText>
+
+        <MudGrid Spacing="2" Class="mb-3">
+            <MudItem xs="12" sm="8">
+                <MudSelect T="int" Label="Configuração de Escala *" @bind-Value="_configSelecionadaId" Margin="Margin.Dense">
+                    @foreach (var c in _configuracoes)
+                    {
+                        <MudSelectItem T="int" Value="@c.IdConfiguracao">
+                            @c.Nome (@c.DataInicio.ToString("dd/MM") a @c.DataFim.ToString("dd/MM/yyyy"))
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex align-center">
+                <MudTooltip Text="Evita que o mesmo integrante ocupe duas funções no mesmo dia (ex.: vocal e teclado juntos)">
+                    <MudSwitch @bind-Value="_impedirMultiplos" Label="Evitar duplicidade no mesmo dia" Color="Color.Primary" />
+                </MudTooltip>
+            </MudItem>
+        </MudGrid>
+
+        <div class="d-flex justify-end mb-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Visibility"
+                       OnClick="@GerarPreview" Disabled="@(_configSelecionadaId == 0 || _gerandoPreview)">
+                @(_gerandoPreview ? "Calculando rotação..." : "Gerar Preview")
+            </MudButton>
+        </div>
+
+        @if (_previewCarregado != null)
+        {
+            <MudDivider Class="my-3" />
+
+            <!-- Alertas de carência/warnings se existirem -->
+            @if (_previewCarregado.Warnings.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-3">
+                    <MudText Typo="Typo.subtitle2" Class="font-weight-bold">Avisos do Algoritmo de Rotação:</MudText>
+                    <ul class="mb-0 pl-4">
+                        @foreach (var w in _previewCarregado.Warnings)
+                        {
+                            <li>@w.Data.ToString("dd/MM/yyyy"): @w.Mensagem</li>
+                        }
+                    </ul>
+                </MudAlert>
+            }
+
+            <!-- Tabs: Grade da Escala e Relatório de Balanceamento -->
+            <MudTabs Elevation="1" Rounded="true" ApplyEffectsToContainer="true" Class="mt-2">
+                <MudTabPanel Text="@($"Grade de Escalas ({_previewCarregado.Escalas.Count} vagas)")" Icon="@Icons.Material.Filled.ViewList">
+                    <MudTable Items="@_previewCarregado.Escalas" Dense="true" Hover="true" Striped="true" Height="300px">
+                        <HeaderContent>
+                            <MudTh>Data</MudTh>
+                            <MudTh>Dia</MudTh>
+                            <MudTh>Função</MudTh>
+                            <MudTh>Integrante Sugerido</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Data.ToString("dd/MM/yyyy")</MudTd>
+                            <MudTd>@context.DiaDaSemana</MudTd>
+                            <MudTd>
+                                <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">
+                                    @ObterNomeTipo(context.TipoEscala)
+                                </MudChip>
+                            </MudTd>
+                            <MudTd Class="font-weight-bold">@context.Integrante?.Nome</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Relatório de Equidade" Icon="@Icons.Material.Filled.Equalizer">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">
+                        Contagem de vezes em que cada voluntário foi escalado no período:
+                    </MudText>
+                    @foreach (var bal in _previewCarregado.Balanceamento)
+                    {
+                        <div class="mb-3">
+                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                                @(bal.TipoIntegranteNome ?? $"Função #{bal.TipoIntegranteId}") - @bal.DiaSemana (Desvio: @bal.DesvioMaximo)
+                            </MudText>
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                @foreach (var c in bal.Contagens)
+                                {
+                                    <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined" Size="Size.Small">
+                                        @c.Nome: <b>@c.TotalEscalado x</b>
+                                    </MudChip>
+                                }
+                            </div>
+                        </div>
+                    }
+                </MudTabPanel>
+            </MudTabs>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _gerarDialogVisible = false)">Fechar</MudButton>
+        @if (_previewCarregado != null)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.CheckCircle"
+                       OnClick="@ConfirmarEPersistir" Disabled="@_salvandoEscala">
+                @(_salvandoEscala ? "Persistindo..." : "Aprovar e Salvar Escala")
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+<!-- Diálogo de Importação CSV -->
+<MudDialog @bind-Visible="_importarCsvVisible" Options="_dialogOptionsPequeno">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Importar Escalas em Lote (CSV)</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+            O arquivo deve conter uma coluna <code>Data</code> e colunas com os nomes das funções correspondentes ao catálogo.
+        </MudText>
+
+        <div class="d-flex flex-column gap-2">
+            <InputFile id="csvFileInput" OnChange="@ArquivoSelecionado" accept=".csv" style="display:none;" />
+            <MudButton HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.CloudUpload" for="csvFileInput">
+                @(_arquivoCsv != null ? _arquivoCsv.Name : "Selecionar Arquivo .CSV")
+            </MudButton>
+            @if (_arquivoCsv != null)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Success">
+                    Arquivo selecionado: @_arquivoCsv.Name (@(_arquivoCsv.Size / 1024) KB)
+                </MudText>
+            }
+        </div>
+
+        <MudCheckBox @bind-Value="_substituirExistentes" Label="Substituir escalas existentes nas mesmas datas"
+                     Color="Color.Warning" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _importarCsvVisible = false)">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@EnviarCsv"
+                   Disabled="@(_arquivoCsv == null || _enviandoCsv)">
+            @(_enviandoCsv ? "Importando..." : "Importar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<EscalaResponseModel> _escalas = [];
+    private List<TipoIntegranteModel> _catalogoTipos = [];
+    private List<ConfiguracaoEscalaModel> _configuracoes = [];
+    private bool _loading = true;
+
+    private DateTime? _filtroDataInicio;
+    private DateTime? _filtroDataFim;
+    private int? _filtroTipo;
+
+    // Estado da Geração de Escala
+    private bool _gerarDialogVisible = false;
+    private int _configSelecionadaId = 0;
+    private bool _impedirMultiplos = true;
+    private bool _gerandoPreview = false;
+    private bool _salvandoEscala = false;
+    private ResultadoPreviewModel? _previewCarregado;
+
+    // Estado do Upload CSV
+    private bool _importarCsvVisible = false;
+    private IBrowserFile? _arquivoCsv;
+    private bool _substituirExistentes = false;
+    private bool _enviandoCsv = false;
+
+    private readonly DialogOptions _gerarDialogOptions = new() { MaxWidth = MaxWidth.Large, FullWidth = true };
+    private readonly DialogOptions _dialogOptionsPequeno = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CarregarTipos(), CarregarConfiguracoes(), CarregarEscalas());
+    }
+
+    private async Task CarregarTipos()
+    {
+        _catalogoTipos = await TipoService.ListarAsync();
+    }
+
+    private async Task CarregarConfiguracoes()
+    {
+        _configuracoes = await ConfigService.ListarAsync();
+    }
+
+    private async Task CarregarEscalas()
+    {
+        _loading = true;
+        var filtro = new EscalaFiltroModel
+        {
+            DataInicio = _filtroDataInicio,
+            DataFim = _filtroDataFim,
+            TipoIntegrante = _filtroTipo
+        };
+        _escalas = await EscalaService.ObterEscalasAsync(filtro);
+        _loading = false;
+    }
+
+    private async Task LimparFiltros()
+    {
+        _filtroDataInicio = null;
+        _filtroDataFim = null;
+        _filtroTipo = null;
+        await CarregarEscalas();
+    }
+
+    private string ObterNomeTipo(int idTipo)
+    {
+        var tipo = _catalogoTipos.FirstOrDefault(t => t.IdTipoIntegrante == idTipo);
+        return tipo?.Nome ?? $"Função #{idTipo}";
+    }
+
+    private void AbrirModalGeracao()
+    {
+        _previewCarregado = null;
+        if (_configuracoes.Count > 0 && _configSelecionadaId == 0)
+            _configSelecionadaId = _configuracoes.First().IdConfiguracao;
+        _gerarDialogVisible = true;
+    }
+
+    private async Task GerarPreview()
+    {
+        if (_configSelecionadaId == 0)
+            return;
+
+        _gerandoPreview = true;
+        var request = new GerarEscalaRequest
+        {
+            ConfiguracaoEscalaId = _configSelecionadaId,
+            ImpedirMultiplosTiposMesmoDia = _impedirMultiplos,
+            Persistir = false
+        };
+
+        _previewCarregado = await EscalaService.GerarPreviewAsync(request);
+        _gerandoPreview = false;
+
+        if (_previewCarregado == null || _previewCarregado.Escalas.Count == 0)
+        {
+            Snackbar.Add("Não foi possível gerar preview. Verifique se há voluntários disponíveis para as datas e funções.", Severity.Warning);
+        }
+        else
+        {
+            Snackbar.Add($"Preview gerado com sucesso! {_previewCarregado.Escalas.Count} vagas preenchidas.", Severity.Success);
+        }
+    }
+
+    private async Task ConfirmarEPersistir()
+    {
+        if (_configSelecionadaId == 0)
+            return;
+
+        _salvandoEscala = true;
+        var request = new GerarEscalaRequest
+        {
+            ConfiguracaoEscalaId = _configSelecionadaId,
+            ImpedirMultiplosTiposMesmoDia = _impedirMultiplos,
+            Persistir = true
+        };
+
+        var sucesso = await EscalaService.ConfirmarEPersistirAsync(request);
+        _salvandoEscala = false;
+
+        if (sucesso)
+        {
+            Snackbar.Add("Escala salva e persistida com sucesso no banco de dados!", Severity.Success);
+            _gerarDialogVisible = false;
+            await CarregarEscalas();
+        }
+        else
+        {
+            Snackbar.Add("Erro ao persistir a escala.", Severity.Error);
+        }
+    }
+
+    private void ArquivoSelecionado(InputFileChangeEventArgs e)
+    {
+        _arquivoCsv = e.File;
+    }
+
+    private async Task EnviarCsv()
+    {
+        if (_arquivoCsv == null) return;
+
+        _enviandoCsv = true;
+        var sucesso = await EscalaService.ImportarCsvAsync(_arquivoCsv, _substituirExistentes);
+        _enviandoCsv = false;
+
+        if (sucesso)
+        {
+            Snackbar.Add("Arquivo CSV importado com sucesso!", Severity.Success);
+            _importarCsvVisible = false;
+            _arquivoCsv = null;
+            await CarregarEscalas();
+        }
+        else
+        {
+            Snackbar.Add("Erro ao importar CSV. Verifique o formato do arquivo e colunas.", Severity.Error);
+        }
+    }
+}

@@ -29,6 +29,8 @@ services:
       - "8010:8080"
     volumes:
       - ../../src:/app
+      - /app/bin
+      - /app/obj
       - ~/.nuget:/root/.nuget
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -41,6 +43,15 @@ services:
     labels:
       - com.microsoft.vscode-devcontainers.name="Escala API"
       - com.microsoft.vscode-devcontainers.description="Ambiente de desenvolvimento para a API Escala"
+
+  escala-web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.frontend
+    ports:
+      - "8020:80"
+    depends_on:
+      - escala-api
 
 volumes:
   sql-data:

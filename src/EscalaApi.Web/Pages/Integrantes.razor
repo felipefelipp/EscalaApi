@@ -1,0 +1,333 @@
+@page "/integrantes"
+@inject IntegranteApiService IntegranteService
+@inject TipoIntegranteApiService TipoService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <div>
+        <MudText Typo="Typo.h5" Class="font-weight-bold" Color="Color.Primary">
+            Integrantes
+        </MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            Gerencie os integrantes, suas funções e os dias da semana disponíveis para escala.
+        </MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+               OnClick="@AbrirModalNovo">
+        Novo Integrante
+    </MudButton>
+</div>
+
+<!-- Filtros de Busca -->
+<MudCard Elevation="1" Class="mb-4 pa-3">
+    <MudGrid Spacing="2" Class="align-center">
+        <MudItem xs="12" sm="6" md="4">
+            <MudTextField @bind-Value="_filtroNome" Label="Buscar por Nome" Placeholder="Digite o nome..."
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" Margin="Margin.Dense" OnKeyUp="@(async e => { if (e.Key == "Enter") await CarregarIntegrantes(); })" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudSelect T="int?" Label="Filtrar por Função" @bind-Value="_filtroTipo" Margin="Margin.Dense" Clearable="true">
+                <MudSelectItem T="int?" Value="@((int?)null)">Todas as Funções</MudSelectItem>
+                @foreach (var tipo in _catalogoTipos)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)tipo.IdTipoIntegrante)">@tipo.Nome</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="4" Class="d-flex gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@CarregarIntegrantes"
+                       StartIcon="@Icons.Material.Filled.FilterAlt">
+                Filtrar
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@LimparFiltros">
+                Limpar
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudCard>
+
+<!-- Tabela de Integrantes -->
+<MudCard Elevation="2">
+    <MudCardContent Class="pa-0">
+        <MudTable Items="@_integrantes" Dense="true" Hover="true" Striped="true" Loading="@_loading">
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Nome</MudTh>
+                <MudTh>Funções</MudTh>
+                <MudTh>Dias da Semana Disponíveis</MudTh>
+                <MudTh Class="text-right">Ações</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.IdIntegrante</MudTd>
+                <MudTd DataLabel="Nome" Class="font-weight-medium">@context.Nome</MudTd>
+                <MudTd DataLabel="Funções">
+                    <div class="d-flex flex-wrap gap-1">
+                        @if (context.TipoIntegrante != null && context.TipoIntegrante.Count > 0)
+                        {
+                            @foreach (var idTipo in context.TipoIntegrante)
+                            {
+                                var nomeTipo = ObterNomeTipo(idTipo);
+                                <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">
+                                    @nomeTipo
+                                </MudChip>
+                            }
+                        }
+                        else
+                        {
+                            <span class="mud-text-secondary">—</span>
+                        }
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Disponibilidade">
+                    <div class="d-flex flex-wrap gap-1">
+                        @if (context.DiasDaSemanaDisponiveis != null && context.DiasDaSemanaDisponiveis.Count > 0)
+                        {
+                            @foreach (var dia in context.DiasDaSemanaDisponiveis)
+                            {
+                                <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Outlined">
+                                    @TraduzirDia(dia)
+                                </MudChip>
+                            }
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small" Variant="Variant.Outlined">
+                                Sem dias definidos
+                            </MudChip>
+                        }
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Ações" Class="text-right">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
+                                   OnClick="@(() => AbrirModalEdicao(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                   OnClick="@(() => ConfirmarExclusao(context))" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="pa-4 text-center mud-text-secondary">Nenhum integrante encontrado.</MudText>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudTablePager RowsPerPageString="Itens por página:" />
+            </PagerContent>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<!-- Diálogo de Cadastro / Edição -->
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(_editandoId.HasValue ? "Editar Integrante" : "Novo Integrante")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="@_formValido">
+            <MudTextField @bind-Value="_nomeModel" Label="Nome Completo *" Required="true"
+                          RequiredError="O nome é obrigatório" Margin="Margin.Dense" Class="mb-3" />
+
+            <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1 font-weight-bold">Funções Habilitadas *</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">Selecione ao menos um papel no catálogo:</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                @foreach (var tipo in _catalogoTipos)
+                {
+                    var isSelected = _tiposSelecionados.Contains(tipo.IdTipoIntegrante);
+                    <MudChip T="string" Color="@(isSelected ? Color.Primary : Color.Default)"
+                             Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                             OnClick="@(() => ToggleTipo(tipo.IdTipoIntegrante))"
+                             Class="cursor-pointer">
+                        @tipo.Nome
+                    </MudChip>
+                }
+            </div>
+
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1 font-weight-bold">Dias Disponíveis para Escala *</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">Dias em que o integrante pode participar:</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                @foreach (var dia in _todosDiasSemana)
+                {
+                    var isSelected = _diasSelecionados.Contains(dia);
+                    <MudChip T="string" Color="@(isSelected ? Color.Secondary : Color.Default)"
+                             Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                             OnClick="@(() => ToggleDia(dia))"
+                             Class="cursor-pointer">
+                        @TraduzirDia(dia)
+                    </MudChip>
+                }
+            </div>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _dialogVisible = false)">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SalvarIntegrante"
+                   Disabled="@(!_formValido || _tiposSelecionados.Count == 0 || _diasSelecionados.Count == 0)">
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<IntegranteModel> _integrantes = [];
+    private List<TipoIntegranteModel> _catalogoTipos = [];
+    private bool _loading = true;
+
+    private string _filtroNome = "";
+    private int? _filtroTipo;
+
+    private bool _dialogVisible = false;
+    private int? _editandoId = null;
+    private string _nomeModel = "";
+    private HashSet<int> _tiposSelecionados = [];
+    private HashSet<DayOfWeek> _diasSelecionados = [];
+
+    private MudForm? _form;
+    private bool _formValido;
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    private readonly List<DayOfWeek> _todosDiasSemana =
+    [
+        DayOfWeek.Sunday, DayOfWeek.Monday, DayOfWeek.Tuesday,
+        DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CarregarTiposCatalogo(), CarregarIntegrantes());
+    }
+
+    private async Task CarregarTiposCatalogo()
+    {
+        _catalogoTipos = await TipoService.ListarAsync();
+    }
+
+    private async Task CarregarIntegrantes()
+    {
+        _loading = true;
+        var response = await IntegranteService.ObterIntegrantesAsync(
+            skip: 0,
+            take: 100,
+            nome: string.IsNullOrWhiteSpace(_filtroNome) ? null : _filtroNome,
+            tipo: _filtroTipo
+        );
+        _integrantes = response?.Integrantes ?? [];
+        _loading = false;
+    }
+
+    private async Task LimparFiltros()
+    {
+        _filtroNome = "";
+        _filtroTipo = null;
+        await CarregarIntegrantes();
+    }
+
+    private string ObterNomeTipo(int idTipo)
+    {
+        var tipo = _catalogoTipos.FirstOrDefault(t => t.IdTipoIntegrante == idTipo);
+        return tipo?.Nome ?? $"Tipo #{idTipo}";
+    }
+
+    private string TraduzirDia(DayOfWeek dia) => dia switch
+    {
+        DayOfWeek.Sunday => "Domingo",
+        DayOfWeek.Monday => "Segunda",
+        DayOfWeek.Tuesday => "Terça",
+        DayOfWeek.Wednesday => "Quarta",
+        DayOfWeek.Thursday => "Quinta",
+        DayOfWeek.Friday => "Sexta",
+        DayOfWeek.Saturday => "Sábado",
+        _ => dia.ToString()
+    };
+
+    private void ToggleTipo(int idTipo)
+    {
+        if (_tiposSelecionados.Contains(idTipo))
+            _tiposSelecionados.Remove(idTipo);
+        else
+            _tiposSelecionados.Add(idTipo);
+    }
+
+    private void ToggleDia(DayOfWeek dia)
+    {
+        if (_diasSelecionados.Contains(dia))
+            _diasSelecionados.Remove(dia);
+        else
+            _diasSelecionados.Add(dia);
+    }
+
+    private void AbrirModalNovo()
+    {
+        _editandoId = null;
+        _nomeModel = "";
+        _tiposSelecionados = [];
+        _diasSelecionados = [DayOfWeek.Sunday, DayOfWeek.Wednesday]; // Padrão comum
+        _dialogVisible = true;
+    }
+
+    private void AbrirModalEdicao(IntegranteModel integrante)
+    {
+        _editandoId = integrante.IdIntegrante;
+        _nomeModel = integrante.Nome;
+        _tiposSelecionados = new HashSet<int>(integrante.TipoIntegrante ?? []);
+        _diasSelecionados = new HashSet<DayOfWeek>(integrante.DiasDaSemanaDisponiveis ?? []);
+        _dialogVisible = true;
+    }
+
+    private async Task SalvarIntegrante()
+    {
+        if (string.IsNullOrWhiteSpace(_nomeModel))
+            return;
+
+        var request = new IntegranteRequest
+        {
+            IdIntegrante = _editandoId ?? 0,
+            Nome = _nomeModel,
+            TipoIntegrante = _tiposSelecionados.ToList(),
+            DiasDaSemanaDisponiveis = _diasSelecionados.ToList()
+        };
+
+        bool sucesso;
+        if (_editandoId.HasValue)
+        {
+            sucesso = await IntegranteService.AtualizarAsync(_editandoId.Value, request);
+        }
+        else
+        {
+            sucesso = await IntegranteService.InserirAsync(request);
+        }
+
+        if (sucesso)
+        {
+            Snackbar.Add("Integrante salvo com sucesso!", Severity.Success);
+            _dialogVisible = false;
+            await CarregarIntegrantes();
+        }
+        else
+        {
+            Snackbar.Add("Erro ao salvar integrante. Verifique se ao menos uma função foi selecionada.", Severity.Error);
+        }
+    }
+
+    private async Task ConfirmarExclusao(IntegranteModel integrante)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Excluir Integrante",
+            $"Tem certeza que deseja remover o integrante \"{integrante.Nome}\"?",
+            yesText: "Excluir", cancelText: "Cancelar");
+
+        if (result == true)
+        {
+            var sucesso = await IntegranteService.ExcluirAsync(integrante.IdIntegrante);
+            if (sucesso)
+            {
+                Snackbar.Add("Integrante excluído com sucesso!", Severity.Success);
+                await CarregarIntegrantes();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao excluir integrante.", Severity.Error);
+            }
+        }
+    }
+}
