@@ -1,0 +1,21 @@
+# Estágio de build com SDK .NET 10
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copia e restaura as dependências do Blazor WASM
+COPY ["src/EscalaApi.Web/EscalaApi.Web.csproj", "src/EscalaApi.Web/"]
+RUN dotnet restore "src/EscalaApi.Web/EscalaApi.Web.csproj"
+
+# Copia os fontes e compila os artefatos estáticos
+COPY src/EscalaApi.Web/ src/EscalaApi.Web/
+WORKDIR "/src/src/EscalaApi.Web"
+RUN dotnet publish "EscalaApi.Web.csproj" -c Release -o /app/publish
+
+# Estágio final: Servidor Nginx Alpine estático (~25MB)
+FROM nginx:alpine AS final
+WORKDIR /usr/share/nginx/html
+COPY --from=build /app/publish/wwwroot .
+COPY infra/docker/nginx-frontend.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

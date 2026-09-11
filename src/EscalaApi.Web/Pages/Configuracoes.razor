@@ -1,0 +1,275 @@
+@page "/configuracoes"
+@inject ConfiguracaoEscalaApiService ConfigService
+@inject TipoIntegranteApiService TipoService
+@inject ISnackbar Snackbar
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <div>
+        <MudText Typo="Typo.h5" Class="font-weight-bold" Color="Color.Primary">
+            Configurações de Escala
+        </MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            Defina os moldes de geração: período (início e fim), dias da semana de eventos e funções participantes.
+        </MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="@AbrirModalNovo">
+        Nova Configuração
+    </MudButton>
+</div>
+
+<MudCard Elevation="2">
+    <MudCardContent Class="pa-0">
+        <MudTable Items="@_configs" Dense="true" Hover="true" Striped="true" Loading="@_loading">
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Nome</MudTh>
+                <MudTh>Período</MudTh>
+                <MudTh>Dias Recorrentes</MudTh>
+                <MudTh>Funções Participantes</MudTh>
+                <MudTh Class="text-right">Ações</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.IdConfiguracao</MudTd>
+                <MudTd DataLabel="Nome" Class="font-weight-bold">@context.Nome</MudTd>
+                <MudTd DataLabel="Período">
+                    @context.DataInicio.ToString("dd/MM/yyyy") até @context.DataFim.ToString("dd/MM/yyyy")
+                </MudTd>
+                <MudTd DataLabel="Dias">
+                    <div class="d-flex flex-wrap gap-1">
+                        @foreach (var dia in context.ValoresRecorrentes)
+                        {
+                            <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Outlined">
+                                @TraduzirDia(dia)
+                            </MudChip>
+                        }
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Funções">
+                    <div class="d-flex flex-wrap gap-1">
+                        @foreach (var idTipo in context.TiposIntegrante)
+                        {
+                            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">
+                                @ObterNomeTipo(idTipo)
+                            </MudChip>
+                        }
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Ações" Class="text-right">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
+                                   OnClick="@(() => AbrirModalEdicao(context))" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="pa-4 text-center mud-text-secondary">Nenhuma configuração de escala cadastrada.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<!-- Diálogo de Criação / Edição -->
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(_editandoId.HasValue ? "Editar Configuração de Escala" : "Nova Configuração de Escala")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="@_formValido">
+            <MudTextField @bind-Value="_nome" Label="Nome da Configuração (ex.: Q1 2026, Louvor Geral) *"
+                          Required="true" Margin="Margin.Dense" Class="mb-3" />
+
+            <MudGrid Spacing="2" Class="mb-3">
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker Label="Data Início *" @bind-Date="_dataInicio"
+                                   DateFormat="dd/MM/yyyy" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker Label="Data Fim *" @bind-Date="_dataFim"
+                                   DateFormat="dd/MM/yyyy" Margin="Margin.Dense" />
+                </MudItem>
+            </MudGrid>
+
+            <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1 font-weight-bold">Dias da Semana Recorrentes *</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">Dias em que haverá escala dentro do período:</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @foreach (var (valor, label) in _diasSemanaOpcoes)
+                {
+                    var isSelected = _diasSelecionados.Contains(valor);
+                    <MudChip T="string" Color="@(isSelected ? Color.Secondary : Color.Default)"
+                             Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                             OnClick="@(() => ToggleDia(valor))"
+                             Class="cursor-pointer">
+                        @label
+                    </MudChip>
+                }
+            </div>
+
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1 font-weight-bold">Funções Participantes *</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">Quais funções do catálogo serão escaladas:</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                @foreach (var tipo in _catalogoTipos)
+                {
+                    var isSelected = _tiposSelecionados.Contains(tipo.IdTipoIntegrante);
+                    <MudChip T="string" Color="@(isSelected ? Color.Primary : Color.Default)"
+                             Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                             OnClick="@(() => ToggleTipo(tipo.IdTipoIntegrante))"
+                             Class="cursor-pointer">
+                        @tipo.Nome
+                    </MudChip>
+                }
+            </div>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _dialogVisible = false)">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SalvarConfiguracao"
+                   Disabled="@(!_formValido || _diasSelecionados.Count == 0 || _tiposSelecionados.Count == 0)">
+            Salvar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ConfiguracaoEscalaModel> _configs = [];
+    private List<TipoIntegranteModel> _catalogoTipos = [];
+    private bool _loading = true;
+
+    private bool _dialogVisible = false;
+    private int? _editandoId = null;
+    private string _nome = "";
+    private DateTime? _dataInicio = DateTime.Today;
+    private DateTime? _dataFim = DateTime.Today.AddMonths(1);
+    private HashSet<int> _diasSelecionados = [];
+    private HashSet<int> _tiposSelecionados = [];
+
+    private MudForm? _form;
+    private bool _formValido;
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    private readonly List<(int valor, string label)> _diasSemanaOpcoes =
+    [
+        (0, "Domingo"),
+        (1, "Segunda"),
+        (2, "Terça"),
+        (3, "Quarta"),
+        (4, "Quinta"),
+        (5, "Sexta"),
+        (6, "Sábado")
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CarregarTipos(), CarregarConfiguracoes());
+    }
+
+    private async Task CarregarTipos()
+    {
+        _catalogoTipos = await TipoService.ListarAsync();
+    }
+
+    private async Task CarregarConfiguracoes()
+    {
+        _loading = true;
+        _configs = await ConfigService.ListarAsync();
+        _loading = false;
+    }
+
+    private string ObterNomeTipo(int idTipo)
+    {
+        var tipo = _catalogoTipos.FirstOrDefault(t => t.IdTipoIntegrante == idTipo);
+        return tipo?.Nome ?? $"Tipo #{idTipo}";
+    }
+
+    private string TraduzirDia(int dia) => dia switch
+    {
+        0 => "Domingo",
+        1 => "Segunda",
+        2 => "Terça",
+        3 => "Quarta",
+        4 => "Quinta",
+        5 => "Sexta",
+        6 => "Sábado",
+        _ => $"Dia {dia}"
+    };
+
+    private void ToggleDia(int dia)
+    {
+        if (_diasSelecionados.Contains(dia))
+            _diasSelecionados.Remove(dia);
+        else
+            _diasSelecionados.Add(dia);
+    }
+
+    private void ToggleTipo(int idTipo)
+    {
+        if (_tiposSelecionados.Contains(idTipo))
+            _tiposSelecionados.Remove(idTipo);
+        else
+            _tiposSelecionados.Add(idTipo);
+    }
+
+    private void AbrirModalNovo()
+    {
+        _editandoId = null;
+        _nome = "";
+        _dataInicio = DateTime.Today;
+        _dataFim = DateTime.Today.AddMonths(1);
+        _diasSelecionados = [0, 3]; // Domingo e Quarta padrão
+        _tiposSelecionados = new HashSet<int>(_catalogoTipos.Select(t => t.IdTipoIntegrante));
+        _dialogVisible = true;
+    }
+
+    private void AbrirModalEdicao(ConfiguracaoEscalaModel config)
+    {
+        _editandoId = config.IdConfiguracao;
+        _nome = config.Nome;
+        _dataInicio = config.DataInicio;
+        _dataFim = config.DataFim;
+        _diasSelecionados = new HashSet<int>(config.ValoresRecorrentes ?? []);
+        _tiposSelecionados = new HashSet<int>(config.TiposIntegrante ?? []);
+        _dialogVisible = true;
+    }
+
+    private async Task SalvarConfiguracao()
+    {
+        if (string.IsNullOrWhiteSpace(_nome) || !_dataInicio.HasValue || !_dataFim.HasValue)
+            return;
+
+        if (_dataInicio > _dataFim)
+        {
+            Snackbar.Add("A data inicial não pode ser maior que a data final.", Severity.Warning);
+            return;
+        }
+
+        var request = new ConfiguracaoEscalaRequest
+        {
+            Nome = _nome,
+            DataInicio = _dataInicio.Value,
+            DataFim = _dataFim.Value,
+            ValoresRecorrentes = _diasSelecionados.ToList(),
+            TiposIntegrante = _tiposSelecionados.ToList()
+        };
+
+        bool sucesso;
+        if (_editandoId.HasValue)
+        {
+            sucesso = await ConfigService.AtualizarAsync(_editandoId.Value, request);
+        }
+        else
+        {
+            sucesso = await ConfigService.InserirAsync(request);
+        }
+
+        if (sucesso)
+        {
+            Snackbar.Add("Configuração salva com sucesso!", Severity.Success);
+            _dialogVisible = false;
+            await CarregarConfiguracoes();
+        }
+        else
+        {
+            Snackbar.Add("Erro ao salvar configuração. Verifique as datas e permissões.", Severity.Error);
+        }
+    }
+}

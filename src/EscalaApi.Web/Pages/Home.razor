@@ -1,0 +1,169 @@
+@page "/"
+@inject IntegranteApiService IntegranteService
+@inject TipoIntegranteApiService TipoService
+@inject ConfiguracaoEscalaApiService ConfigService
+@inject EscalaApiService EscalaService
+@inject NavigationManager Navigation
+
+<MudText Typo="Typo.h4" Class="mb-1 font-weight-bold" Color="Color.Primary">
+    Painel de Gestão de Escalas
+</MudText>
+<MudText Typo="Typo.body1" Class="mb-6 mud-text-secondary">
+    Bem-vindo ao sistema de geração inteligente e rotação equilibrada de escalas.
+</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-6" />
+}
+else
+{
+    <MudGrid>
+        <!-- Cards de Estatísticas -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2" Class="pa-2 border-solid border-2 border-primary">
+                <MudCardContent>
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">INTEGRANTES</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold">@_totalIntegrantes</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Primary" Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.People" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2" Class="pa-2">
+                <MudCardContent>
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">TIPOS / FUNÇÕES</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold">@_totalTipos</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Secondary" Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.Badge" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2" Class="pa-2">
+                <MudCardContent>
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">CONFIGURAÇÕES</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold">@_totalConfigs</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Tertiary" Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.Tune" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2" Class="pa-2">
+                <MudCardContent>
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">SLOTS ESCALADOS</MudText>
+                            <MudText Typo="Typo.h4" Class="font-weight-bold">@_totalEscalados</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Info" Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- Ações Rápidas -->
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2" Class="pa-4 h-100">
+                <MudText Typo="Typo.h6" Class="mb-3">Ações Rápidas</MudText>
+                <div class="d-flex flex-column gap-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="@(() => Navigation.NavigateTo("escalas"))" Size="Size.Large">
+                        Gerar ou Visualizar Escala
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.PersonAdd"
+                               OnClick="@(() => Navigation.NavigateTo("integrantes"))">
+                        Cadastrar Novo Integrante
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Settings"
+                               OnClick="@(() => Navigation.NavigateTo("configuracoes"))">
+                        Definir Período e Regras
+                    </MudButton>
+                </div>
+            </MudCard>
+        </MudItem>
+
+        <!-- Informações do Fluxo -->
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2" Class="pa-4 h-100">
+                <MudText Typo="Typo.h6" Class="mb-3">Como Funciona o Algoritmo de Rotação?</MudText>
+                <MudTimeline TimelinePosition="TimelinePosition.Start">
+                    <MudTimelineItem Color="Color.Primary">
+                        <ItemContent>
+                            <MudText Typo="Typo.subtitle2">1. Tipos e Funções</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Cadastre instrumentos e funções no catálogo.</MudText>
+                        </ItemContent>
+                    </MudTimelineItem>
+                    <MudTimelineItem Color="Color.Secondary">
+                        <ItemContent>
+                            <MudText Typo="Typo.subtitle2">2. Integrantes & Disponibilidade</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Vincule os voluntários às suas funções e dias da semana.</MudText>
+                        </ItemContent>
+                    </MudTimelineItem>
+                    <MudTimelineItem Color="Color.Tertiary">
+                        <ItemContent>
+                            <MudText Typo="Typo.subtitle2">3. Geração com Preview</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Gere a escala com rotação justa de pesos e aprove antes de salvar.</MudText>
+                        </ItemContent>
+                    </MudTimelineItem>
+                </MudTimeline>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private bool _loading = true;
+    private int _totalIntegrantes = 0;
+    private int _totalTipos = 0;
+    private int _totalConfigs = 0;
+    private int _totalEscalados = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var taskIntegrantes = IntegranteService.ObterIntegrantesAsync(0, 1);
+            var taskTipos = TipoService.ListarAsync();
+            var taskConfigs = ConfigService.ListarAsync();
+            var taskEscalas = EscalaService.ObterEscalasAsync();
+
+            await Task.WhenAll(taskIntegrantes, taskTipos, taskConfigs, taskEscalas);
+
+            _totalIntegrantes = (await taskIntegrantes)?.Total ?? 0;
+            _totalTipos = (await taskTipos).Count;
+            _totalConfigs = (await taskConfigs).Count;
+            _totalEscalados = (await taskEscalas).Count;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar dashboard: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}
