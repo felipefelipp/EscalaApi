@@ -186,9 +186,9 @@ Tanto pela Interface Web ([http://localhost:8020](http://localhost:8020)) quanto
 
 ## Documentação Complementar
 
-- [PRD.md](PRD.md) — Documento de Requisitos do Produto (visão funcional completa).
-- [ALGORITMO-ROTACAO.md](ALGORITMO-ROTACAO.md) — Especificação do algoritmo de rotação e critérios de desempate.
-- [BASELINE-ESCALA.md](BASELINE-ESCALA.md) — Comportamento e histórico legado da escala.
+- [PRD.md](docs/PRD.md) — Documento de Requisitos do Produto (visão funcional completa).
+- [ALGORITMO-ROTACAO.md](docs/ALGORITMO-ROTACAO.md) — Especificação do algoritmo de rotação e critérios de desempate.
+- [BASELINE-ESCALA.md](docs/BASELINE-ESCALA.md) — Comportamento e histórico legado da escala.
 
 ---
 
