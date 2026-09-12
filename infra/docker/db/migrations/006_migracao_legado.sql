@@ -2,18 +2,24 @@
 USE EscalaDb;
 GO
 
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
+
 IF NOT EXISTS (SELECT 1 FROM schema_migrations WHERE nome_arquivo = '006_migracao_legado.sql')
 BEGIN
     -- Adicionar id_tipo_integrante em escalas se nao existir
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('escalas') AND name = 'id_tipo_integrante')
     BEGIN
         ALTER TABLE escalas ADD id_tipo_integrante INT NULL;
-        UPDATE e SET e.id_tipo_integrante = tic.id_tipo_integrante
-        FROM escalas e
-        INNER JOIN tipo_escala te ON e.cd_tipo_escala = te.id_tipo_escala
-        INNER JOIN tipo_integrante_catalogo tic ON tic.desc_nome = te.txt_descricao
-        WHERE e.id_tipo_integrante IS NULL;
     END
+
+    EXEC('UPDATE e SET e.id_tipo_integrante = tic.id_tipo_integrante
+    FROM escalas e
+    INNER JOIN tipo_escala te ON e.cd_tipo_escala = te.id_tipo_escala
+    INNER JOIN tipo_integrante_catalogo tic ON tic.desc_nome = te.txt_descricao
+    WHERE e.id_tipo_integrante IS NULL;');
 
     -- UNIQUE constraint em data+tipo (via id_tipo_integrante ou cd_tipo_escala)
     IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_escala_data_tipo' AND object_id = OBJECT_ID('escalas'))

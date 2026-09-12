@@ -97,9 +97,9 @@ public class EscalaManager : IEscalaManagerService
                 if (candidatos.Count == 0)
                     continue;
 
-                var poolCandidatos = candidatos;
+                var poolCandidatos = candidatos.ToList();
 
-                // 4. Prevenção de duplicidade: evitar mais de uma função para a mesma pessoa no mesmo dia se configurado
+                // 4. Prevenção de duplicidade no mesmo dia + Aceite de Carência Flexível (Item 4)
                 if (escala.ImpedirMultiplosTiposMesmoDia)
                 {
                     var idsJaEscaladosNoDia = todasAsEscalas
@@ -111,25 +111,50 @@ public class EscalaManager : IEscalaManagerService
                         .Where(c => !idsJaEscaladosNoDia.Contains(c.IdIntegrante))
                         .ToList();
 
-                    if (semConflito.Count > 0)
+                    // Se ninguém sem conflito estiver disponível, aceita a carência (vaga aberta) em vez de duplicar forçadamente
+                    if (semConflito.Count == 0)
+                        continue;
+
+                    poolCandidatos = semConflito;
+                }
+
+                // 5. Alternância de Função Consecutiva (Item 2 - Parametrizável via EvitarConsecutivosMesmaFuncao)
+                if (escala.EvitarConsecutivosMesmaFuncao && poolCandidatos.Count > 1)
+                {
+                    // Obtém quem exerceu esta mesma função imediatamente anterior
+                    var ultimaEscalaDoTipo = todasAsEscalas
+                        .Where(e => e.TipoEscala == tipo && e.Data.Date < data)
+                        .OrderByDescending(e => e.Data)
+                        .FirstOrDefault();
+
+                    if (ultimaEscalaDoTipo != null)
                     {
-                        poolCandidatos = semConflito;
+                        var candidatosAlternativos = poolCandidatos
+                            .Where(c => c.IdIntegrante != ultimaEscalaDoTipo.Integrante.IdIntegrante)
+                            .ToList();
+
+                        if (candidatosAlternativos.Count > 0)
+                        {
+                            poolCandidatos = candidatosAlternativos;
+                        }
                     }
                 }
 
-                // 5. Contar escalas recentes (últimos 30 dias + novas escalas já geradas)
-                var contagemSelecoes = poolCandidatos.ToDictionary(
+                // 6. Contagem Contextual por Dia da Semana (Item 3) e Neutralidade na Volta (Item 1)
+                var contagemContextual = poolCandidatos.ToDictionary(
                     c => c.IdIntegrante,
                     c => todasAsEscalas.Count(e =>
-                        e.Integrante.IdIntegrante == c.IdIntegrante && e.TipoEscala == tipo));
+                        e.Integrante.IdIntegrante == c.IdIntegrante &&
+                        e.TipoEscala == tipo &&
+                        e.Data.DayOfWeek == data.DayOfWeek));
 
-                var minSelecoes = contagemSelecoes.Values.Min();
+                var minSelecoes = contagemContextual.Values.Min();
 
                 var menosSelecionados = poolCandidatos
-                    .Where(c => contagemSelecoes[c.IdIntegrante] == minSelecoes)
+                    .Where(c => contagemContextual[c.IdIntegrante] == minSelecoes)
                     .ToList();
 
-                // 6. Sorteio aleatório justo usando Random.Shared entre os empatados com a menor carga
+                // 7. Sorteio aleatório justo usando Random.Shared entre os empatados com a menor carga
                 var integranteEscolhido = menosSelecionados[Random.Shared.Next(menosSelecionados.Count)];
 
                 var novaEscala = new Escala(
@@ -250,11 +275,32 @@ public class EscalaManager : IEscalaManagerService
     public async Task<Result<EscalaIntegrante>> EditarEscala(int id, EscalaIntegrante escala)
     {
         var erros = new List<Notification>();
+
+        if (id <= 0)
+        {
+            erros.Add(new Notification("Id", "O identificador da escala deve ser maior que zero."));
+            return Result<EscalaIntegrante>.BadRequest(erros);
+        }
+
         var escaladto = await _escalaRepository.ObterEscalaPorId(id);
         if (escaladto == null)
         {
             erros.Add(new Notification(null, $"Escala não encontrada."));
             return Result<EscalaIntegrante>.NotFound(erros);
+        }
+
+        var integrantes = await _integranteRepository.ObterIntegrantePorId(escala.idIntegrante);
+        if (integrantes == null || integrantes.Count == 0)
+        {
+            erros.Add(new Notification("IdIntegrante", $"Integrante #{escala.idIntegrante} não encontrado."));
+            return Result<EscalaIntegrante>.BadRequest(erros);
+        }
+
+        var tiposDisponiveis = await _tipoEscalaRepository.ObterTiposEscalaDisponiveis();
+        if (tiposDisponiveis == null || !tiposDisponiveis.Contains(escala.TipoEscala))
+        {
+            erros.Add(new Notification("TipoEscala", $"Tipo de escala #{escala.TipoEscala} não encontrado ou inativo."));
+            return Result<EscalaIntegrante>.BadRequest(erros);
         }
 
         escaladto.TipoEscala = (int)escala.TipoEscala;
@@ -264,10 +310,58 @@ public class EscalaManager : IEscalaManagerService
         if (!escalaAtualizada)
         {
             erros.Add(new Notification(id.ToString(), $"Não foi possível atualizar a escala."));
-            return Result<EscalaIntegrante>.NotFound(erros);
+            return Result<EscalaIntegrante>.BadRequest(erros);
         }
 
         return Result<EscalaIntegrante>.Ok(escala);
+    }
+
+    public async Task<Result<bool>> ExcluirEscala(int idEscala)
+    {
+        var erros = new List<Notification>();
+
+        if (idEscala <= 0)
+        {
+            erros.Add(new Notification("Id", "O identificador da escala deve ser maior que zero."));
+            return Result<bool>.BadRequest(erros);
+        }
+
+        var escaladto = await _escalaRepository.ObterEscalaPorId(idEscala);
+        if (escaladto == null)
+        {
+            erros.Add(new Notification(null, $"Escala não encontrada."));
+            return Result<bool>.NotFound(erros);
+        }
+
+        var removido = await _escalaRepository.ExcluirEscala(idEscala);
+        if (!removido)
+        {
+            erros.Add(new Notification("Excluir", "Não foi possível excluir a escala."));
+            return Result<bool>.BadRequest(erros);
+        }
+
+        return Result<bool>.Ok(true);
+    }
+
+    public async Task<Result<int>> ExcluirEscalasEmLote(List<int> idsEscalas)
+    {
+        var erros = new List<Notification>();
+
+        if (idsEscalas == null || idsEscalas.Count == 0)
+        {
+            erros.Add(new Notification("Ids", "Nenhum identificador de escala informado para exclusão."));
+            return Result<int>.BadRequest(erros);
+        }
+
+        var idsValidos = idsEscalas.Where(id => id > 0).Distinct().ToList();
+        if (idsValidos.Count == 0)
+        {
+            erros.Add(new Notification("Ids", "Nenhum identificador de escala válido informado."));
+            return Result<int>.BadRequest(erros);
+        }
+
+        var totalExcluidas = await _escalaRepository.ExcluirEscalasEmLote(idsValidos);
+        return Result<int>.Ok(totalExcluidas);
     }
 
     public static List<DiaSemana> ObterDiasEscala(DateTime dataInicio, DateTime dataFim, DayOfWeek diaDaSemana)

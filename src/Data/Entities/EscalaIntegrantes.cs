@@ -7,4 +7,5 @@ public record EscalaIntegrantes(
     List<int> TipoEscala,
     List<DayOfWeek> DiasDaSemana,
     bool Persistir = false,
-    bool ImpedirMultiplosTiposMesmoDia = true);
+    bool ImpedirMultiplosTiposMesmoDia = true,
+    bool EvitarConsecutivosMesmaFuncao = true);

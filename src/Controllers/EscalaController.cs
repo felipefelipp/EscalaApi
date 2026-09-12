@@ -122,6 +122,42 @@ public class EscalaController : ControllerBase
         return Ok(retorno);
     }
 
+    /// <summary>Exclui uma escala persistida pelo ID.</summary>
+    [HttpDelete("/escalas/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ExcluirEscala(int id)
+    {
+        var retorno = await _escalaManagerService.ExcluirEscala(id);
+
+        if (!retorno.Sucess)
+        {
+            if (retorno.StatusCode == HttpStatusCode.NotFound)
+                return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+
+            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        }
+
+        return Ok(new { Mensagem = "Escala excluída com sucesso." });
+    }
+
+    /// <summary>Exclui múltiplas escalas persistidas em lote a partir de seus IDs.</summary>
+    [HttpPost("/escalas/excluir-lote")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExcluirEscalasEmLote([FromBody] EscalaApi.Data.Request.ExcluirEscalasRequest request)
+    {
+        var retorno = await _escalaManagerService.ExcluirEscalasEmLote(request?.Ids ?? []);
+
+        if (!retorno.Sucess)
+        {
+            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        }
+
+        return Ok(new { TotalExcluidas = retorno.Object, Mensagem = $"{retorno.Object} escala(s) excluída(s) com sucesso." });
+    }
+
     /// <summary>Importa escalas em lote via CSV. Colunas = nomes dos tipos no catálogo.</summary>
     /// <param name="file">Arquivo CSV com coluna de data e uma coluna por tipo.</param>
     /// <param name="substituirExistentes">Se true, sobrescreve slots já existentes na mesma data.</param>

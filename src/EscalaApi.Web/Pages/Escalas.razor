@@ -2,6 +2,7 @@
 @inject EscalaApiService EscalaService
 @inject ConfiguracaoEscalaApiService ConfigService
 @inject TipoIntegranteApiService TipoService
+@inject IntegranteApiService IntegranteService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
@@ -61,17 +62,40 @@
 <!-- Tabela de Escalas Persistidas -->
 <MudCard Elevation="2">
     <MudCardContent Class="pa-0">
-        <MudTable Items="@_escalas" Dense="true" Hover="true" Striped="true" Loading="@_loading">
+        <MudTable @ref="_table" Items="@_escalas" Dense="true" Hover="true" Striped="true" Loading="@_loading">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Escalas Persistidas (@_escalas.Count slots)</MudText>
+                <MudSpacer />
+                @if (_escalasSelecionadas.Count > 0)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteSweep"
+                               OnClick="@ConfirmarExclusaoEmLote" Size="Size.Small" Class="mr-2">
+                        Excluir Selecionadas (@_escalasSelecionadas.Count)
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small"
+                               OnClick="@(() => _escalasSelecionadas.Clear())">
+                        Desmarcar
+                    </MudButton>
+                }
             </ToolBarContent>
             <HeaderContent>
+                <MudTh Style="width: 48px;">
+                    <MudCheckBox T="bool?" Value="@ObterEstadoCheckboxHeader()"
+                                 ValueChanged="@OnHeaderCheckboxChanged"
+                                 Color="Color.Primary" Dense="true" TriState="true" />
+                </MudTh>
                 <MudTh>Data</MudTh>
                 <MudTh>Dia da Semana</MudTh>
                 <MudTh>Função / Papel</MudTh>
                 <MudTh>Integrante Escalado</MudTh>
+                <MudTh Style="text-align: right;">Ações</MudTh>
             </HeaderContent>
             <RowTemplate>
+                <MudTd>
+                    <MudCheckBox T="bool" Value="@_escalasSelecionadas.Contains(context)"
+                                 ValueChanged="@((bool val) => OnToggleItem(context, val))"
+                                 Color="Color.Primary" Dense="true" />
+                </MudTd>
                 <MudTd DataLabel="Data">
                     <div class="d-flex align-center gap-2">
                         <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Color="Color.Primary" />
@@ -97,6 +121,16 @@
                         </MudAvatar>
                         <span class="font-weight-medium">@context.NomeIntegrante</span>
                     </div>
+                </MudTd>
+                <MudTd DataLabel="Ações" Class="text-right">
+                    <MudTooltip Text="Editar escala">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
+                                       OnClick="@(() => AbrirModalEdicao(context))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Excluir escala">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                       OnClick="@(() => ConfirmarExclusao(context))" />
+                    </MudTooltip>
                 </MudTd>
             </RowTemplate>
             <NoRecordsContent>
@@ -125,7 +159,7 @@
         </MudText>
 
         <MudGrid Spacing="2" Class="mb-3">
-            <MudItem xs="12" sm="8">
+            <MudItem xs="12">
                 <MudSelect T="int" Label="Configuração de Escala *" @bind-Value="_configSelecionadaId" Margin="Margin.Dense">
                     @foreach (var c in _configuracoes)
                     {
@@ -135,12 +169,43 @@
                     }
                 </MudSelect>
             </MudItem>
-            <MudItem xs="12" sm="5">
-                <MudPaper Class="pa-2 d-flex flex-column" Outlined="true" Elevation="0">
+
+            @if (ConfiguracaoSelecionada != null)
+            {
+                <MudItem xs="12">
+                    <MudPaper Class="pa-3" Elevation="0" Outlined="true" Style="background-color: var(--mud-palette-background-grey);">
+                        <div class="d-flex align-center gap-2 mb-1">
+                            <MudIcon Icon="@Icons.Material.Filled.Rule" Size="Size.Small" Color="Color.Primary" />
+                            <MudText Typo="Typo.subtitle2" Class="font-weight-bold">
+                                Funções que serão geradas (@ConfiguracaoSelecionada.TiposIntegrante.Count):
+                            </MudText>
+                        </div>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            @foreach (var idTipo in ConfiguracaoSelecionada.TiposIntegrante)
+                            {
+                                <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">
+                                    @ObterNomeTipo(idTipo)
+                                </MudChip>
+                            }
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            }
+            <MudItem xs="12" sm="6">
+                <MudPaper Class="pa-2 d-flex flex-column h-100" Outlined="true" Elevation="0">
                     <MudSwitch @bind-Value="_impedirMultiplos" Label="Evitar duplicidade no mesmo dia" Color="Color.Primary" />
                     <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
-                        <b>Ativado:</b> O voluntário atuará em no máximo 1 função por culto/data (ex.: se cantar no Vocal, não será alocado em Instrumentos no mesmo dia).<br/>
-                        <b>Desativado:</b> Permite que o voluntário cubra mais de uma função na mesma data se houver carência.
+                        <b>Ativado:</b> O voluntário atua em no máximo 1 função por culto/data. Se houver carência, aceita vaga aberta.<br/>
+                        <b>Desativado:</b> Permite cobrir mais de uma função se faltar voluntário.
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudPaper Class="pa-2 d-flex flex-column h-100" Outlined="true" Elevation="0">
+                    <MudSwitch @bind-Value="_evitarConsecutivos" Label="Alternar função em cultos consecutivos" Color="Color.Secondary" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
+                        <b>Ativado:</b> Quem exerceu a função (ex.: Ministro) no culto anterior não repete no próximo, alternando com os outros.<br/>
+                        <b>Desativado:</b> Permite repetir a função consecutivamente se tiver menor carga.
                     </MudText>
                 </MudPaper>
             </MudItem>
@@ -266,20 +331,115 @@
     </DialogActions>
 </MudDialog>
 
+<!-- Diálogo de Edição de Escala -->
+<MudDialog @bind-Visible="_editarDialogVisible" Options="_dialogOptionsPequeno">
+    <TitleContent>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Editar Escala #@_escalaEmEdicao?.IdEscala</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (_escalaEmEdicao != null)
+        {
+            <div class="d-flex flex-column gap-3">
+                <MudDatePicker Label="Data da Escala *" @bind-Date="_escalaEmEdicao.Data"
+                               DateFormat="dd/MM/yyyy" Margin="Margin.Dense" Required="true" />
+
+                <MudSelect T="int" Label="Função / Papel *" @bind-Value="_escalaEmEdicao.TipoEscala" Margin="Margin.Dense">
+                    @foreach (var tipo in _catalogoTipos)
+                    {
+                        <MudSelectItem T="int" Value="@tipo.IdTipoIntegrante">@tipo.Nome</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect T="int" Label="Integrante Escalado *" @bind-Value="_escalaEmEdicao.IdIntegrante" Margin="Margin.Dense">
+                    @foreach (var integrante in _todosIntegrantes)
+                    {
+                        <MudSelectItem T="int" Value="@integrante.IdIntegrante">@integrante.Nome</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _editarDialogVisible = false)">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SalvarEdicaoEscala"
+                   Disabled="@_salvandoEdicao">
+            @(_salvandoEdicao ? "Salvando..." : "Salvar Alterações")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
+    private MudTable<EscalaResponseModel>? _table;
     private List<EscalaResponseModel> _escalas = [];
+    private HashSet<EscalaResponseModel> _escalasSelecionadas = [];
     private List<TipoIntegranteModel> _catalogoTipos = [];
     private List<ConfiguracaoEscalaModel> _configuracoes = [];
+    private List<IntegranteModel> _todosIntegrantes = [];
     private bool _loading = true;
+
+    private List<EscalaResponseModel> ObterItensExibidos()
+    {
+        if (_table == null || _table.FilteredItems == null)
+            return _escalas.Take(10).ToList();
+
+        var rowsPerPage = _table.RowsPerPage <= 0 ? 10 : _table.RowsPerPage;
+        return _table.FilteredItems
+            .Skip(_table.CurrentPage * rowsPerPage)
+            .Take(rowsPerPage)
+            .ToList();
+    }
+
+    private bool? ObterEstadoCheckboxHeader()
+    {
+        var exibidas = ObterItensExibidos();
+        if (exibidas.Count == 0) return false;
+        var selecionadasNaPagina = exibidas.Count(e => _escalasSelecionadas.Contains(e));
+        if (selecionadasNaPagina == 0) return false;
+        if (selecionadasNaPagina == exibidas.Count) return true;
+        return null;
+    }
+
+    private void OnHeaderCheckboxChanged(bool? valor)
+    {
+        var exibidas = ObterItensExibidos();
+        var marcar = valor == true;
+        if (marcar)
+        {
+            foreach (var item in exibidas)
+                _escalasSelecionadas.Add(item);
+        }
+        else
+        {
+            foreach (var item in exibidas)
+                _escalasSelecionadas.Remove(item);
+        }
+    }
+
+    private void OnToggleItem(EscalaResponseModel item, bool marcar)
+    {
+        if (marcar)
+            _escalasSelecionadas.Add(item);
+        else
+            _escalasSelecionadas.Remove(item);
+    }
 
     private DateTime? _filtroDataInicio;
     private DateTime? _filtroDataFim;
     private int? _filtroTipo;
 
+    // Estado da Edição de Escala
+    private bool _editarDialogVisible = false;
+    private bool _salvandoEdicao = false;
+    private EditarEscalaModel? _escalaEmEdicao;
+
     // Estado da Geração de Escala
     private bool _gerarDialogVisible = false;
     private int _configSelecionadaId = 0;
     private bool _impedirMultiplos = true;
+    private bool _evitarConsecutivos = true;
     private bool _gerandoPreview = false;
     private bool _salvandoEscala = false;
     private ResultadoPreviewModel? _previewCarregado;
@@ -295,7 +455,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CarregarTipos(), CarregarConfiguracoes(), CarregarEscalas());
+        await Task.WhenAll(CarregarTipos(), CarregarConfiguracoes(), CarregarIntegrantes(), CarregarEscalas());
     }
 
     private async Task CarregarTipos()
@@ -308,9 +468,16 @@
         _configuracoes = await ConfigService.ListarAsync();
     }
 
+    private async Task CarregarIntegrantes()
+    {
+        var response = await IntegranteService.ObterIntegrantesAsync(skip: 0, take: 100);
+        _todosIntegrantes = response?.Integrantes ?? [];
+    }
+
     private async Task CarregarEscalas()
     {
         _loading = true;
+        _escalasSelecionadas.Clear();
         var filtro = new EscalaFiltroModel
         {
             DataInicio = _filtroDataInicio,
@@ -326,6 +493,7 @@
         _filtroDataInicio = null;
         _filtroDataFim = null;
         _filtroTipo = null;
+        _escalasSelecionadas.Clear();
         await CarregarEscalas();
     }
 
@@ -333,6 +501,94 @@
     {
         var tipo = _catalogoTipos.FirstOrDefault(t => t.IdTipoIntegrante == idTipo);
         return tipo?.Nome ?? $"Função #{idTipo}";
+    }
+
+    private ConfiguracaoEscalaModel? ConfiguracaoSelecionada =>
+        _configuracoes.FirstOrDefault(c => c.IdConfiguracao == _configSelecionadaId);
+
+    private void AbrirModalEdicao(EscalaResponseModel escala)
+    {
+        _escalaEmEdicao = new EditarEscalaModel
+        {
+            IdEscala = escala.IdEscala,
+            Data = escala.Data,
+            IdIntegrante = escala.IdIntegrante ?? 0,
+            TipoEscala = escala.CodigoTipoEscala
+        };
+        _editarDialogVisible = true;
+    }
+
+    private async Task SalvarEdicaoEscala()
+    {
+        if (_escalaEmEdicao == null || _escalaEmEdicao.Data == null || _escalaEmEdicao.IdIntegrante == 0 || _escalaEmEdicao.TipoEscala == 0)
+        {
+            Snackbar.Add("Preencha todos os campos da escala.", Severity.Warning);
+            return;
+        }
+
+        _salvandoEdicao = true;
+        var sucesso = await EscalaService.EditarEscalaAsync(_escalaEmEdicao.IdEscala, _escalaEmEdicao);
+        _salvandoEdicao = false;
+
+        if (sucesso)
+        {
+            Snackbar.Add("Escala atualizada com sucesso!", Severity.Success);
+            _editarDialogVisible = false;
+            await CarregarEscalas();
+        }
+        else
+        {
+            Snackbar.Add("Erro ao atualizar escala.", Severity.Error);
+        }
+    }
+
+    private async Task ConfirmarExclusao(EscalaResponseModel escala)
+    {
+        var nome = string.IsNullOrWhiteSpace(escala.NomeIntegrante) ? "vaga aberta" : escala.NomeIntegrante;
+        var dataStr = escala.Data?.ToString("dd/MM/yyyy") ?? "";
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Excluir Escala",
+            $"Tem certeza que deseja excluir a escala do dia {dataStr} ({escala.DescricaoTipoEscala} - {nome})?",
+            yesText: "Excluir", cancelText: "Cancelar");
+
+        if (result == true)
+        {
+            var sucesso = await EscalaService.ExcluirEscalaAsync(escala.IdEscala);
+            if (sucesso)
+            {
+                Snackbar.Add("Escala excluída com sucesso!", Severity.Success);
+                await CarregarEscalas();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao excluir escala.", Severity.Error);
+            }
+        }
+    }
+
+    private async Task ConfirmarExclusaoEmLote()
+    {
+        if (_escalasSelecionadas.Count == 0) return;
+
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Excluir Escalas em Lote",
+            $"Tem certeza que deseja excluir as {_escalasSelecionadas.Count} escalas selecionadas permanentemente?",
+            yesText: "Excluir Todas", cancelText: "Cancelar");
+
+        if (result == true)
+        {
+            var ids = _escalasSelecionadas.Select(e => e.IdEscala).ToList();
+            var sucesso = await EscalaService.ExcluirEscalasEmLoteAsync(ids);
+            if (sucesso)
+            {
+                Snackbar.Add($"{ids.Count} escala(s) excluída(s) com sucesso!", Severity.Success);
+                await CarregarEscalas();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao excluir escalas em lote.", Severity.Error);
+            }
+        }
     }
 
     private void AbrirModalGeracao()
@@ -353,6 +609,7 @@
         {
             ConfiguracaoEscalaId = _configSelecionadaId,
             ImpedirMultiplosTiposMesmoDia = _impedirMultiplos,
+            EvitarConsecutivosMesmaFuncao = _evitarConsecutivos,
             Persistir = false
         };
 
@@ -379,6 +636,7 @@
         {
             ConfiguracaoEscalaId = _configSelecionadaId,
             ImpedirMultiplosTiposMesmoDia = _impedirMultiplos,
+            EvitarConsecutivosMesmaFuncao = _evitarConsecutivos,
             Persistir = true
         };
 

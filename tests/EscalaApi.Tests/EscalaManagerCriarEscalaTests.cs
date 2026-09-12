@@ -129,4 +129,50 @@ public class EscalaManagerCriarEscalaTests
         Assert.Equal(2, resultado.Object!.Count);
         Assert.All(resultado.Object, e => Assert.Equal(1, e.Integrante.IdIntegrante));
     }
+
+    [Fact]
+    public async Task CriarEscala_ComEvitarConsecutivosAtivo_AlternaMinistroEmCultosConsecutivos()
+    {
+        // Cenário Quarta (07/10/2026) e Domingo (11/10/2026)
+        var quarta = new DateTime(2026, 10, 7);
+        var domingo = new DateTime(2026, 10, 11);
+
+        // Sheylla (1) e Yasmin (2) disponíveis na quarta e no domingo para Tipo 1 (Ministro)
+        var sheyllaQua = new IntegranteDto { IdIntegrante = 1, Nome = "Sheylla", TipoIntegrante = 1, DiaDaSemanaDisponivel = (int)DayOfWeek.Wednesday };
+        var yasminQua = new IntegranteDto { IdIntegrante = 2, Nome = "Yasmin", TipoIntegrante = 1, DiaDaSemanaDisponivel = (int)DayOfWeek.Wednesday };
+        var sheyllaDom = new IntegranteDto { IdIntegrante = 1, Nome = "Sheylla", TipoIntegrante = 1, DiaDaSemanaDisponivel = (int)DayOfWeek.Sunday };
+        var yasminDom = new IntegranteDto { IdIntegrante = 2, Nome = "Yasmin", TipoIntegrante = 1, DiaDaSemanaDisponivel = (int)DayOfWeek.Sunday };
+
+        _integranteRepoMock.Setup(r => r.ObterIntegrantes(It.Is<IntegranteFiltro>(f => f.DiaDisponivel == DayOfWeek.Wednesday)))
+            .ReturnsAsync(([sheyllaQua, yasminQua], 2));
+
+        _integranteRepoMock.Setup(r => r.ObterIntegrantes(It.Is<IntegranteFiltro>(f => f.DiaDisponivel == DayOfWeek.Sunday)))
+            .ReturnsAsync(([sheyllaDom, yasminDom], 2));
+
+        var service = new EscalaManager(
+            _integranteRepoMock.Object,
+            _escalaRepoMock.Object,
+            _tipoEscalaRepoMock.Object,
+            _tipoCatalogoRepoMock.Object);
+
+        var request = new EscalaIntegrantes(
+            quarta,
+            domingo,
+            TipoEscala: [1],
+            DiasDaSemana: [DayOfWeek.Wednesday, DayOfWeek.Sunday],
+            Persistir: false,
+            ImpedirMultiplosTiposMesmoDia: true,
+            EvitarConsecutivosMesmaFuncao: true);
+
+        var resultado = await service.CriarEscala(request);
+
+        Assert.True(resultado.Sucess);
+        Assert.Equal(2, resultado.Object!.Count);
+
+        var ministroQuarta = resultado.Object.First(e => e.Data.Date == quarta).Integrante.IdIntegrante;
+        var ministroDomingo = resultado.Object.First(e => e.Data.Date == domingo).Integrante.IdIntegrante;
+
+        // Com EvitarConsecutivosMesmaFuncao = true, quem ministrou na quarta NÃO pode ministrar no domingo se o outro está disponível
+        Assert.NotEqual(ministroQuarta, ministroDomingo);
+    }
 }

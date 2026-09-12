@@ -101,4 +101,54 @@ public class EscalaApiService
             return false;
         }
     }
+
+    public async Task<bool> EditarEscalaAsync(int id, EditarEscalaModel model)
+    {
+        try
+        {
+            var payload = new
+            {
+                idIntegrante = model.IdIntegrante,
+                data = model.Data ?? DateTime.Today,
+                tipoEscala = model.TipoEscala
+            };
+
+            var response = await _http.PutAsJsonAsync($"/escalas/{id}", payload);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao editar escala {id}: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> ExcluirEscalaAsync(int id)
+    {
+        try
+        {
+            var response = await _http.DeleteAsync($"/escalas/{id}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao excluir escala {id}: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> ExcluirEscalasEmLoteAsync(List<int> ids)
+    {
+        try
+        {
+            var payload = new ExcluirEscalasRequest { Ids = ids };
+            var response = await _http.PostAsJsonAsync("/escalas/excluir-lote", payload);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao excluir escalas em lote: {ex.Message}");
+            return false;
+        }
+    }
 }

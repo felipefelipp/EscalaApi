@@ -105,8 +105,18 @@
                 }
             </div>
 
-            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1 font-weight-bold">Funções Participantes *</MudText>
-            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">Quais funções do catálogo serão escaladas:</MudText>
+            <div class="d-flex justify-space-between align-center mt-3 mb-1">
+                <MudText Typo="Typo.subtitle2" Class="font-weight-bold">Funções Participantes *</MudText>
+                <div class="d-flex gap-1">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@SelecionarTodosTipos">
+                        Marcar Todas
+                    </MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default" OnClick="@LimparTipos">
+                        Limpar
+                    </MudButton>
+                </div>
+            </div>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">Selecione apenas as funções que devem ser escaladas neste molde:</MudText>
             <div class="d-flex flex-wrap gap-2 mb-2">
                 @foreach (var tipo in _catalogoTipos)
                 {
@@ -115,7 +125,7 @@
                              Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
                              OnClick="@(() => ToggleTipo(tipo.IdTipoIntegrante))"
                              Class="cursor-pointer">
-                        @tipo.Nome
+                        @(isSelected ? "✓ " : "")@tipo.Nome
                     </MudChip>
                 }
             </div>
@@ -207,6 +217,16 @@
             _tiposSelecionados.Remove(idTipo);
         else
             _tiposSelecionados.Add(idTipo);
+    }
+
+    private void SelecionarTodosTipos()
+    {
+        _tiposSelecionados = new HashSet<int>(_catalogoTipos.Select(t => t.IdTipoIntegrante));
+    }
+
+    private void LimparTipos()
+    {
+        _tiposSelecionados.Clear();
     }
 
     private void AbrirModalNovo()
