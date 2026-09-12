@@ -123,7 +123,7 @@ public class IntegranteService : IIntegranteService
             return Result<Integrante>.BadRequest(erros);
         }
 
-        var integranteAtualizado = await _integranteRepository.AtualizarIntegrante(integranteDto.FirstOrDefault());
+        var integranteAtualizado = await _integranteRepository.AtualizarIntegrante(integranteDto.First());
 
         if (!integranteAtualizado)
         {
@@ -186,7 +186,10 @@ public class IntegranteService : IIntegranteService
             return Result<Integrante>.BadRequest(erros);
         }
 
-        integranteDto.First().IdIntegrante = idIntegranteInserido;
+        foreach (var dto in integranteDto)
+        {
+            dto.IdIntegrante = idIntegranteInserido;
+        }
 
         var tipoIntegranteInserido = await _tipoIntegranteRepository.InserirTipoIntegrante(integranteDto);
 
