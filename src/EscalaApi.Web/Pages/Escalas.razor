@@ -135,10 +135,14 @@
                     }
                 </MudSelect>
             </MudItem>
-            <MudItem xs="12" sm="4" Class="d-flex align-center">
-                <MudTooltip Text="Evita que o mesmo integrante ocupe duas funções no mesmo dia (ex.: vocal e teclado juntos)">
+            <MudItem xs="12" sm="5">
+                <MudPaper Class="pa-2 d-flex flex-column" Outlined="true" Elevation="0">
                     <MudSwitch @bind-Value="_impedirMultiplos" Label="Evitar duplicidade no mesmo dia" Color="Color.Primary" />
-                </MudTooltip>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
+                        <b>Ativado:</b> O voluntário atuará em no máximo 1 função por culto/data (ex.: se cantar no Vocal, não será alocado em Instrumentos no mesmo dia).<br/>
+                        <b>Desativado:</b> Permite que o voluntário cubra mais de uma função na mesma data se houver carência.
+                    </MudText>
+                </MudPaper>
             </MudItem>
         </MudGrid>
 

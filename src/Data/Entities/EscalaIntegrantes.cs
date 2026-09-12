@@ -6,4 +6,5 @@ public record EscalaIntegrantes(
     //List<int> IdIntegrantes, Possivel funcionalidade: Criar a escala com apenas os integrantes selecionados mesmo que haja disponibilidade para nãos selecionados
     List<int> TipoEscala,
     List<DayOfWeek> DiasDaSemana,
-    bool Persistir = false);
+    bool Persistir = false,
+    bool ImpedirMultiplosTiposMesmoDia = true);
