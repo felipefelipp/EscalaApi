@@ -13,6 +13,7 @@ public interface IConfiguracaoEscalaService
     Task<Result<List<DateTime>>> ObterDatasExpandidasAsync(int id);
     Task<Result<ConfiguracaoEscala>> InserirAsync(ConfiguracaoEscalaRequest request);
     Task<Result<ConfiguracaoEscala>> AtualizarAsync(int id, ConfiguracaoEscalaRequest request);
+    Task<Result<bool>> ExcluirAsync(int id);
 }
 
 public interface IEscalaGeracaoService

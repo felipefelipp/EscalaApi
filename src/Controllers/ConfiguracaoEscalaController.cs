@@ -116,4 +116,24 @@ public class ConfiguracaoEscalaController : ControllerBase
         }
         return Ok(retorno.Object);
     }
+
+    /// <summary>Exclui uma configuração de escala, desde que não possua escalas geradas.</summary>
+    [HttpDelete("/configuracoes-escala/{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(RetornoErroModel), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Excluir(int id)
+    {
+        var retorno = await _service.ExcluirAsync(id);
+        if (!retorno.Sucess)
+        {
+            if (retorno.StatusCode == HttpStatusCode.NotFound)
+                return NotFound(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+            if (retorno.StatusCode == HttpStatusCode.Conflict)
+                return Conflict(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+            return BadRequest(new RetornoErroModel { Erros = retorno.Notifications.ToList() });
+        }
+        return NoContent();
+    }
 }

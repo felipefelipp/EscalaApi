@@ -14,4 +14,6 @@ public interface IConfiguracaoEscalaRepository
     Task<List<int>> ObterSlotsAsync(int id);
     Task<List<int>> ObterTiposAsync(int id);
     Task RemoverSlotsETiposAsync(int id);
+    Task<int> ContarEscalasVinculadasAsync(int id);
+    Task<bool> ExcluirAsync(int id);
 }

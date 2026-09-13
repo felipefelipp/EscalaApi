@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <div class="d-flex flex-wrap justify-space-between align-center gap-2 mb-4">
     <div>
@@ -27,6 +28,40 @@
         </MudButton>
     </div>
 </div>
+
+@if (!_loading)
+{
+    @if (_configuracoes.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="mb-4" Elevation="1">
+            <div class="d-flex justify-space-between align-center flex-wrap gap-2">
+                <div>
+                    <b>Nenhum Modelo de Escala cadastrado:</b> Para gerar uma escala inteligente, é necessário cadastrar primeiro um Modelo de Escala definindo o período, os dias e as funções participantes.
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Surface" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Tune"
+                           OnClick="@(() => Navigation.NavigateTo("configuracoes"))">
+                    Criar Modelo de Escala
+                </MudButton>
+            </div>
+        </MudAlert>
+    }
+    else if (_todosIntegrantes.Count == 0)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" Elevation="1">
+            <div class="d-flex justify-space-between align-center flex-wrap gap-2">
+                <div>
+                    <b>Nenhum Integrante cadastrado:</b> Para que o algoritmo distribua os voluntários nas datas e funções, é necessário cadastrar os integrantes e vincular suas disponibilidades.
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Surface" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           OnClick="@(() => Navigation.NavigateTo("integrantes"))">
+                    Cadastrar Integrantes
+                </MudButton>
+            </div>
+        </MudAlert>
+    }
+}
 
 <!-- Filtros de Consulta -->
 <MudCard Elevation="1" Class="mb-4 pa-3">
@@ -139,9 +174,34 @@
                 </MudTd>
             </RowTemplate>
             <NoRecordsContent>
-                <MudText Class="pa-6 text-center mud-text-secondary">
-                    Nenhuma escala encontrada para os filtros selecionados. Use o botão <b>"Gerar Nova Escala"</b> para criar a primeira!
-                </MudText>
+                <div class="pa-8 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Large" Color="Color.Secondary" Class="mb-2" />
+                    <MudText Typo="Typo.h6" Class="font-weight-bold">Nenhuma escala encontrada</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+                        @if (_configuracoes.Count == 0)
+                        {
+                            <span>Antes de gerar escalas, você precisa cadastrar um <b>Modelo de Escala</b> definindo período, dias e funções.</span>
+                        }
+                        else
+                        {
+                            <span>Use o botão <b>"Gerar Nova Escala"</b> para gerar automaticamente a escala com balanceamento inteligente.</span>
+                        }
+                    </MudText>
+                    @if (_configuracoes.Count == 0)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Tune"
+                                   OnClick="@(() => Navigation.NavigateTo("configuracoes"))">
+                            Criar Primeiro Modelo de Escala
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoMode"
+                                   OnClick="@AbrirModalGeracao">
+                            Gerar Nova Escala
+                        </MudButton>
+                    }
+                </div>
             </NoRecordsContent>
             <PagerContent>
                 <MudTablePager RowsPerPageString="Linhas por página:" />
@@ -165,7 +225,7 @@
 
         <MudGrid Spacing="2" Class="mb-3">
             <MudItem xs="12">
-                <MudSelect T="int" Label="Configuração de Escala *" @bind-Value="_configSelecionadaId" Margin="Margin.Dense">
+                <MudSelect T="int" Label="Modelo de Escala *" @bind-Value="_configSelecionadaId" Margin="Margin.Dense">
                     @foreach (var c in _configuracoes)
                     {
                         <MudSelectItem T="int" Value="@c.IdConfiguracao">
@@ -188,11 +248,21 @@
                         <div class="d-flex flex-wrap gap-1 mt-1">
                             @foreach (var idTipo in ConfiguracaoSelecionada.TiposIntegrante)
                             {
-                                <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">
-                                    @ObterNomeTipo(idTipo)
+                                var qtd = ObterQtdIntegrantesTipo(idTipo);
+                                <MudChip T="string" Color="@(qtd > 0 ? Color.Primary : Color.Warning)" Size="Size.Small" Variant="Variant.Filled">
+                                    @ObterNomeTipo(idTipo) @(qtd > 0 ? $"({qtd})" : "(sem voluntários)")
                                 </MudChip>
                             }
                         </div>
+                        @{
+                            var semVoluntarios = ObterTiposSemIntegrantesNaConfig(ConfiguracaoSelecionada);
+                        }
+                        @if (semVoluntarios.Count > 0)
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                                <b>Atenção:</b> As seguintes funções não possuem nenhum voluntário cadastrado: <b>@string.Join(", ", semVoluntarios.Select(t => t.Nome))</b>. As vagas dessas funções ficarão abertas na escala.
+                            </MudAlert>
+                        }
                     </MudPaper>
                 </MudItem>
             }
@@ -590,8 +660,35 @@
         }
     }
 
-    private void AbrirModalGeracao()
+    private async Task AbrirModalGeracao()
     {
+        if (_configuracoes.Count == 0)
+        {
+            bool? irModelos = await DialogService.ShowMessageBoxAsync(
+                "Falta Modelo de Escala",
+                "Para gerar uma escala inteligente, você precisa primeiro criar um Modelo de Escala (definindo período, dias de eventos e funções participantes).\n\nDeseja criar um Modelo de Escala agora?",
+                yesText: "Criar Modelo de Escala", cancelText: "Cancelar");
+
+            if (irModelos == true)
+                Navigation.NavigateTo("configuracoes");
+
+            return;
+        }
+
+        if (_todosIntegrantes.Count == 0)
+        {
+            bool? irIntegrantes = await DialogService.ShowMessageBoxAsync(
+                "Nenhum Integrante Cadastrado",
+                "Não há integrantes cadastrados no sistema.\n\nSe a escala for gerada sem integrantes, todas as vagas ficarão abertas.\n\nDeseja cadastrar integrantes agora?",
+                yesText: "Ir para Integrantes", cancelText: "Continuar Mesmo Assim");
+
+            if (irIntegrantes == true)
+            {
+                Navigation.NavigateTo("integrantes");
+                return;
+            }
+        }
+
         _previewCarregado = null;
         if (_configuracoes.Count > 0 && _configSelecionadaId == 0)
             _configSelecionadaId = _configuracoes.First().IdConfiguracao;
@@ -715,5 +812,17 @@
         var fileName = $"escalas_persistidas_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
         await JS.InvokeVoidAsync("downloadFileFromText", fileName, csvContent, "text/csv;charset=utf-8");
         Snackbar.Add("Arquivo Excel exportado com sucesso!", Severity.Success);
+    }
+
+    private int ObterQtdIntegrantesTipo(int idTipo)
+    {
+        return _todosIntegrantes.Count(i => i.TipoIntegrante != null && i.TipoIntegrante.Contains(idTipo));
+    }
+
+    private List<TipoIntegranteModel> ObterTiposSemIntegrantesNaConfig(ConfiguracaoEscalaModel config)
+    {
+        return _catalogoTipos
+            .Where(t => config.TiposIntegrante != null && config.TiposIntegrante.Contains(t.IdTipoIntegrante) && ObterQtdIntegrantesTipo(t.IdTipoIntegrante) == 0)
+            .ToList();
     }
 }

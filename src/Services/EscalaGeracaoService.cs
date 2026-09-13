@@ -34,50 +34,70 @@ public class EscalaGeracaoService : IEscalaGeracaoService
         if (config is null)
             return Result<ResultadoPreview>.NotFound([new Notification("ConfiguracaoEscalaId", "Configuração não encontrada.")]);
 
+        var integrantes = await CarregarIntegrantesElegiveisAsync(config.TiposIntegrante);
+        var historico = await CarregarHistoricoAsync(config.IdConfiguracao);
+
+        var parametros = MontarParametrosGeracao(config, request, integrantes, historico);
+        var resultado = await _geradorDePreview.GerarAsync(parametros);
+
+        if (request.Persistir && resultado.Escalas.Count > 0)
+        {
+            await PersistirEscalasAsync(resultado.Escalas, config.IdConfiguracao);
+        }
+
+        return Result<ResultadoPreview>.Ok(resultado);
+    }
+
+    private async Task<List<Integrante>> CarregarIntegrantesElegiveisAsync(List<int> tiposIntegrante)
+    {
         var integrantes = new List<Integrante>();
-        foreach (var tipo in config.TiposIntegrante)
+        foreach (var tipo in tiposIntegrante)
         {
             var (dtos, _) = await _integranteRepository.ObterIntegrantes(new IntegranteFiltro { TipoIntegrante = tipo, Take = 1000 });
             integrantes.AddRange(dtos.ParaIntegrantes());
         }
 
-        integrantes = integrantes
+        return integrantes
             .GroupBy(i => i.IdIntegrante)
             .Select(g => g.First())
             .ToList();
+    }
 
+    private async Task<List<Escala>> CarregarHistoricoAsync(int idConfiguracao)
+    {
         var historicoDto = await _escalaRepository.ObterEscalas(new EscalaFiltro
         {
-            IdConfiguracao = config.IdConfiguracao,
+            IdConfiguracao = idConfiguracao,
             Take = 10000
         });
-        var historico = historicoDto.ParaListaEscala();
 
-        var parametros = new ParametrosGeracaoPreview
-        {
-            ConfiguracaoEscalaId = config.IdConfiguracao,
-            DataInicio = config.DataInicio,
-            DataFim = config.DataFim,
-            DiasDaSemana = config.ValoresRecorrentes.Select(v => (DayOfWeek)v).ToList(),
-            TiposIntegrante = config.TiposIntegrante,
-            Integrantes = integrantes,
-            Historico = historico,
-            CodigoEstrategia = "contextual_dia_semana",
-            ImpedirMultiplosTiposMesmoDia = request.ImpedirMultiplosTiposMesmoDia,
-            DesempateAleatorio = request.DesempateAleatorio
-        };
+        return historicoDto.ParaListaEscala();
+    }
 
-        var resultado = await _geradorDePreview.GerarAsync(parametros);
+    private static ParametrosGeracaoPreview MontarParametrosGeracao(
+        ConfiguracaoEscala config,
+        GerarEscalaRequest request,
+        List<Integrante> integrantes,
+        List<Escala> historico) => new()
+    {
+        ConfiguracaoEscalaId = config.IdConfiguracao,
+        DataInicio = config.DataInicio,
+        DataFim = config.DataFim,
+        DiasDaSemana = config.ValoresRecorrentes.Select(v => (DayOfWeek)v).ToList(),
+        TiposIntegrante = config.TiposIntegrante,
+        Integrantes = integrantes,
+        Historico = historico,
+        CodigoEstrategia = "contextual_dia_semana",
+        ImpedirMultiplosTiposMesmoDia = request.ImpedirMultiplosTiposMesmoDia,
+        DesempateAleatorio = request.DesempateAleatorio
+    };
 
-        if (request.Persistir && resultado.Escalas.Count > 0)
-        {
-            var dtos = resultado.Escalas.ParaListaEscalaDto();
-            foreach (var dto in dtos)
-                dto.IdConfiguracao = config.IdConfiguracao;
+    private async Task PersistirEscalasAsync(List<Escala> escalas, int idConfiguracao)
+    {
+        var dtos = escalas.ParaListaEscalaDto();
+        foreach (var dto in dtos)
+            dto.IdConfiguracao = idConfiguracao;
 
-            await _escalaRepository.InserirEscala(dtos);
-        }
-
-        return Result<ResultadoPreview>.Ok(resultado);
+        await _escalaRepository.InserirEscala(dtos);
     }
 }

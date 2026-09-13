@@ -91,4 +91,19 @@ public class ConfiguracaoEscalaRepository : IConfiguracaoEscalaRepository
         await connection.ExecuteAsync(ConfiguracaoEscalaScripts.ExcluirSlots, new { Id = id });
         await connection.ExecuteAsync(ConfiguracaoEscalaScripts.ExcluirTipos, new { Id = id });
     }
+
+    public async Task<int> ContarEscalasVinculadasAsync(int id)
+    {
+        using var connection = DatabaseContext.GetConnection();
+        return await connection.ExecuteScalarAsync<int>(
+            ConfiguracaoEscalaScripts.ContarEscalasVinculadas, new { Id = id });
+    }
+
+    public async Task<bool> ExcluirAsync(int id)
+    {
+        using var connection = DatabaseContext.GetConnection();
+        var rows = await connection.ExecuteAsync(
+            ConfiguracaoEscalaScripts.ExcluirSoft, new { Id = id });
+        return rows > 0;
+    }
 }

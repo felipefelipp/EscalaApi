@@ -57,7 +57,7 @@ else
                 <MudCardContent>
                     <div class="d-flex justify-space-between align-center">
                         <div>
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary">CONFIGURAÇÕES</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">MODELOS DE ESCALA</MudText>
                             <MudText Typo="Typo.h4" Class="font-weight-bold">@_totalConfigs</MudText>
                         </div>
                         <MudAvatar Color="Color.Tertiary" Size="Size.Large">
@@ -97,9 +97,9 @@ else
                                OnClick="@(() => Navigation.NavigateTo("integrantes"))">
                         Cadastrar Novo Integrante
                     </MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Settings"
+                    <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Tune"
                                OnClick="@(() => Navigation.NavigateTo("configuracoes"))">
-                        Definir Período e Regras
+                        Criar / Gerenciar Modelos de Escala
                     </MudButton>
                 </div>
             </MudCard>
@@ -108,24 +108,30 @@ else
         <!-- Informações do Fluxo -->
         <MudItem xs="12" md="6">
             <MudCard Elevation="2" Class="pa-4 h-100">
-                <MudText Typo="Typo.h6" Class="mb-3">Como Funciona o Algoritmo de Rotação?</MudText>
+                <MudText Typo="Typo.h6" Class="mb-3">Como Funciona a Geração de Escala?</MudText>
                 <MudTimeline TimelinePosition="TimelinePosition.Start">
                     <MudTimelineItem Color="Color.Primary">
                         <ItemContent>
                             <MudText Typo="Typo.subtitle2">1. Tipos e Funções</MudText>
-                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Cadastre instrumentos e funções no catálogo.</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Cadastre instrumentos e papéis no catálogo.</MudText>
                         </ItemContent>
                     </MudTimelineItem>
                     <MudTimelineItem Color="Color.Secondary">
                         <ItemContent>
                             <MudText Typo="Typo.subtitle2">2. Integrantes & Disponibilidade</MudText>
-                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Vincule os voluntários às suas funções e dias da semana.</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Cadastre voluntários e vincule funções e dias disponíveis.</MudText>
                         </ItemContent>
                     </MudTimelineItem>
                     <MudTimelineItem Color="Color.Tertiary">
                         <ItemContent>
-                            <MudText Typo="Typo.subtitle2">3. Geração com Preview</MudText>
-                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Gere a escala com rotação justa de pesos e aprove antes de salvar.</MudText>
+                            <MudText Typo="Typo.subtitle2">3. Modelos de Escala</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Defina período, dias dos eventos e funções participantes.</MudText>
+                        </ItemContent>
+                    </MudTimelineItem>
+                    <MudTimelineItem Color="Color.Success">
+                        <ItemContent>
+                            <MudText Typo="Typo.subtitle2">4. Geração com Preview</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Gere a escala com rotação balanceada e aprove antes de salvar.</MudText>
                         </ItemContent>
                     </MudTimelineItem>
                 </MudTimeline>

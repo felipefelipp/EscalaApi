@@ -12,7 +12,7 @@ public static class ConfiguracaoEscalaScripts
                c.dt_inicio AS DataInicio, c.dt_fim AS DataFim,
                c.fl_ativo AS Ativo
         FROM configuracao_escala c
-        WHERE c.id_configuracao = @Id";
+        WHERE c.id_configuracao = @Id AND c.fl_ativo = 1";
 
     public const string Listar = @"
         SELECT c.id_configuracao AS IdConfiguracao, c.desc_nome AS Nome,
@@ -39,4 +39,10 @@ public static class ConfiguracaoEscalaScripts
 
     public const string ExcluirSlots = @"DELETE FROM configuracao_escala_slot WHERE id_configuracao = @Id";
     public const string ExcluirTipos = @"DELETE FROM configuracao_escala_tipo WHERE id_configuracao = @Id";
+
+    public const string ContarEscalasVinculadas = @"
+        SELECT COUNT(1) FROM escalas WHERE id_configuracao = @Id";
+
+    public const string ExcluirSoft = @"
+        UPDATE configuracao_escala SET fl_ativo = 0 WHERE id_configuracao = @Id";
 }

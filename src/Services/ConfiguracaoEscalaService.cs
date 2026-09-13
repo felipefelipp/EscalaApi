@@ -77,6 +77,20 @@ public class ConfiguracaoEscalaService : IConfiguracaoEscalaService
         return Result<ConfiguracaoEscala>.Ok(atualizada!);
     }
 
+    public async Task<Result<bool>> ExcluirAsync(int id)
+    {
+        var existente = await _repository.ObterPorIdAsync(id);
+        if (existente is null)
+            return Result<bool>.NotFound([new Notification("Id", "Configuração não encontrada.")]);
+
+        var totalEscalas = await _repository.ContarEscalasVinculadasAsync(id);
+        if (totalEscalas > 0)
+            return Result<bool>.Conflict([new Notification("Configuracao", "Não é possível excluir a configuração porque já existem escalas geradas vinculadas a ela.")]);
+
+        var sucesso = await _repository.ExcluirAsync(id);
+        return Result<bool>.Ok(sucesso);
+    }
+
     private async Task<List<Notification>> ValidarAsync(ConfiguracaoEscalaRequest request)
     {
         var erros = new List<Notification>();

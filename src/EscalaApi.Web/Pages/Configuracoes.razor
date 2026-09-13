@@ -1,29 +1,73 @@
 @page "/configuracoes"
+@page "/modelos-escala"
 @inject ConfiguracaoEscalaApiService ConfigService
 @inject TipoIntegranteApiService TipoService
+@inject IntegranteApiService IntegranteService
+@inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
-<div class="d-flex justify-space-between align-center mb-4">
+<div class="d-flex flex-wrap justify-space-between align-center gap-2 mb-4">
     <div>
         <MudText Typo="Typo.h5" Class="font-weight-bold" Color="Color.Primary">
-            Configurações de Escala
+            Modelos de Escala
         </MudText>
         <MudText Typo="Typo.body2" Class="mud-text-secondary">
-            Defina os moldes de geração: período (início e fim), dias da semana de eventos e funções participantes.
+            Defina os moldes de geração: período (início e fim), dias recorrentes de eventos e funções participantes necessárias para gerar as escalas.
         </MudText>
     </div>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-               OnClick="@AbrirModalNovo">
-        Nova Configuração
-    </MudButton>
+    <div class="d-flex gap-2">
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.People"
+                   OnClick="@(() => Navigation.NavigateTo("integrantes"))">
+            Ver Integrantes
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="@AbrirModalNovo">
+            Novo Modelo de Escala
+        </MudButton>
+    </div>
 </div>
+
+@if (!_loading)
+{
+    @if (_catalogoTipos.Count == 0)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4" Elevation="1">
+            <div class="d-flex justify-space-between align-center flex-wrap gap-2">
+                <div>
+                    <b>Nenhuma Função / Tipo de Integrante cadastrado:</b> Você precisa cadastrar as funções no catálogo (ex.: Bateria, Baixo, Voz) antes de criar os modelos de escala.
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Surface" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Badge"
+                           OnClick="@(() => Navigation.NavigateTo("tipos-integrante"))">
+                    Cadastrar Funções
+                </MudButton>
+            </div>
+        </MudAlert>
+    }
+    else if (_todosIntegrantes.Count == 0)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Class="mb-4" Elevation="1">
+            <div class="d-flex justify-space-between align-center flex-wrap gap-2">
+                <div>
+                    <b>Nenhum Integrante cadastrado:</b> Para que as escalas geradas sejam preenchidas com voluntários, é necessário cadastrar integrantes e associá-los às funções e dias de disponibilidade.
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Surface" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           OnClick="@(() => Navigation.NavigateTo("integrantes"))">
+                    Cadastrar Integrantes
+                </MudButton>
+            </div>
+        </MudAlert>
+    }
+}
 
 <MudCard Elevation="2">
     <MudCardContent Class="pa-0">
         <MudTable Items="@_configs" Dense="true" Hover="true" Striped="true" Loading="@_loading">
             <HeaderContent>
                 <MudTh>ID</MudTh>
-                <MudTh>Nome</MudTh>
+                <MudTh>Nome do Modelo</MudTh>
                 <MudTh>Período</MudTh>
                 <MudTh>Dias Recorrentes</MudTh>
                 <MudTh>Funções Participantes</MudTh>
@@ -56,12 +100,28 @@
                     </div>
                 </MudTd>
                 <MudTd DataLabel="Ações" Class="text-right">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
-                                   OnClick="@(() => AbrirModalEdicao(context))" />
+                    <MudTooltip Text="Editar modelo">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
+                                       OnClick="@(() => AbrirModalEdicao(context))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Excluir modelo">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                       OnClick="@(() => ConfirmarExclusao(context))" />
+                    </MudTooltip>
                 </MudTd>
             </RowTemplate>
             <NoRecordsContent>
-                <MudText Class="pa-4 text-center mud-text-secondary">Nenhuma configuração de escala cadastrada.</MudText>
+                <div class="pa-8 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Tune" Size="Size.Large" Color="Color.Secondary" Class="mb-2" />
+                    <MudText Typo="Typo.h6" Class="font-weight-bold">Nenhum modelo de escala cadastrado</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+                        Crie um modelo informando o período (ex: próximo mês ou trimestre), dias de eventos e funções participantes.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="@AbrirModalNovo">
+                        Criar Primeiro Modelo de Escala
+                    </MudButton>
+                </div>
             </NoRecordsContent>
         </MudTable>
     </MudCardContent>
@@ -70,16 +130,24 @@
 <!-- Diálogo de Criação / Edição -->
 <MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
     <TitleContent>
-        <MudText Typo="Typo.h6">
-            @(_editandoId.HasValue ? "Editar Configuração de Escala" : "Nova Configuração de Escala")
-        </MudText>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">
+                @(_editandoId.HasValue ? "Editar Modelo de Escala" : "Novo Modelo de Escala")
+            </MudText>
+        </div>
     </TitleContent>
     <DialogContent>
-        <MudForm @ref="_form" @bind-IsValid="@_formValido">
-            <MudTextField @bind-Value="_nome" Label="Nome da Configuração (ex.: Q1 2026, Louvor Geral) *"
-                          Required="true" Margin="Margin.Dense" Class="mb-3" />
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+            Defina o período, os dias da semana em que os eventos acontecem e selecione quais funções farão parte desta escala.
+        </MudText>
 
-            <MudGrid Spacing="2" Class="mb-3">
+        <MudForm @ref="_form" @bind-IsValid="@_formValido">
+            <MudTextField @bind-Value="_nome" Label="Nome do Modelo (ex.: Q1 2026 - Cultos Gerais, Louvor) *"
+                          Required="true" RequiredError="O nome do modelo é obrigatório."
+                          Margin="Margin.Dense" Class="mb-3" />
+
+            <MudGrid Spacing="2" Class="mb-2">
                 <MudItem xs="12" sm="6">
                     <MudDatePicker Label="Data Início *" @bind-Date="_dataInicio"
                                    DateFormat="dd/MM/yyyy" Margin="Margin.Dense" />
@@ -89,6 +157,19 @@
                                    DateFormat="dd/MM/yyyy" Margin="Margin.Dense" />
                 </MudItem>
             </MudGrid>
+
+            @if (_dataInicio.HasValue && _dataFim.HasValue && _dataInicio > _dataFim)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">
+                    A data inicial não pode ser posterior à data final.
+                </MudAlert>
+            }
+            else if (!PossuiOcorrenciasNoPeriodo())
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
+                    Atenção: O período de @(_dataInicio?.ToString("dd/MM/yyyy")) a @(_dataFim?.ToString("dd/MM/yyyy")) não contém nenhum dos dias da semana selecionados abaixo.
+                </MudAlert>
+            }
 
             <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1 font-weight-bold">Dias da Semana Recorrentes *</MudText>
             <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">Dias em que haverá escala dentro do período:</MudText>
@@ -116,26 +197,41 @@
                     </MudButton>
                 </div>
             </div>
-            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">Selecione apenas as funções que devem ser escaladas neste molde:</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">
+                Selecione as funções participantes (indicamos a quantidade de voluntários disponíveis cadastrados):
+            </MudText>
             <div class="d-flex flex-wrap gap-2 mb-2">
                 @foreach (var tipo in _catalogoTipos)
                 {
                     var isSelected = _tiposSelecionados.Contains(tipo.IdTipoIntegrante);
-                    <MudChip T="string" Color="@(isSelected ? Color.Primary : Color.Default)"
+                    var qtdIntegrantes = ObterQtdIntegrantesTipo(tipo.IdTipoIntegrante);
+                    var chipColor = isSelected ? (qtdIntegrantes == 0 ? Color.Warning : Color.Primary) : Color.Default;
+
+                    <MudChip T="string" Color="@chipColor"
                              Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
                              OnClick="@(() => ToggleTipo(tipo.IdTipoIntegrante))"
                              Class="cursor-pointer">
-                        @(isSelected ? "✓ " : "")@tipo.Nome
+                        @(isSelected ? "✓ " : "")@tipo.Nome (@(qtdIntegrantes == 1 ? "1 voluntário" : $"{qtdIntegrantes} voluntários"))
                     </MudChip>
                 }
             </div>
+
+            @{
+                var tiposSemVoluntarios = ObterTiposSelecionadosSemIntegrantes();
+            }
+            @if (tiposSemVoluntarios.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                    <b>Funções sem voluntários:</b> As funções selecionadas (@string.Join(", ", tiposSemVoluntarios.Select(t => t.Nome))) não têm nenhum integrante cadastrado. Suas vagas ficarão abertas até que integrantes sejam adicionados.
+                </MudAlert>
+            }
         </MudForm>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(() => _dialogVisible = false)">Cancelar</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SalvarConfiguracao"
-                   Disabled="@(!_formValido || _diasSelecionados.Count == 0 || _tiposSelecionados.Count == 0)">
-            Salvar
+                   Disabled="@(!_formValido || _diasSelecionados.Count == 0 || _tiposSelecionados.Count == 0 || (_dataInicio > _dataFim) || !PossuiOcorrenciasNoPeriodo())">
+            Salvar Modelo
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -143,6 +239,7 @@
 @code {
     private List<ConfiguracaoEscalaModel> _configs = [];
     private List<TipoIntegranteModel> _catalogoTipos = [];
+    private List<IntegranteModel> _todosIntegrantes = [];
     private bool _loading = true;
 
     private bool _dialogVisible = false;
@@ -170,7 +267,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(CarregarTipos(), CarregarConfiguracoes());
+        await Task.WhenAll(CarregarTipos(), CarregarConfiguracoes(), CarregarIntegrantes());
     }
 
     private async Task CarregarTipos()
@@ -178,11 +275,43 @@
         _catalogoTipos = await TipoService.ListarAsync();
     }
 
+    private async Task CarregarIntegrantes()
+    {
+        var response = await IntegranteService.ObterIntegrantesAsync(skip: 0, take: 100);
+        _todosIntegrantes = response?.Integrantes ?? [];
+    }
+
     private async Task CarregarConfiguracoes()
     {
         _loading = true;
         _configs = await ConfigService.ListarAsync();
         _loading = false;
+    }
+
+    private int ObterQtdIntegrantesTipo(int idTipo)
+    {
+        return _todosIntegrantes.Count(i => i.TipoIntegrante != null && i.TipoIntegrante.Contains(idTipo));
+    }
+
+    private List<TipoIntegranteModel> ObterTiposSelecionadosSemIntegrantes()
+    {
+        return _catalogoTipos
+            .Where(t => _tiposSelecionados.Contains(t.IdTipoIntegrante) && ObterQtdIntegrantesTipo(t.IdTipoIntegrante) == 0)
+            .ToList();
+    }
+
+    private bool PossuiOcorrenciasNoPeriodo()
+    {
+        if (!_dataInicio.HasValue || !_dataFim.HasValue || _diasSelecionados.Count == 0) return true;
+        if (_dataInicio > _dataFim) return false;
+
+        for (var dt = _dataInicio.Value.Date; dt <= _dataFim.Value.Date; dt = dt.AddDays(1))
+        {
+            var diaInt = (int)dt.DayOfWeek;
+            if (_diasSelecionados.Contains(diaInt))
+                return true;
+        }
+        return false;
     }
 
     private string ObterNomeTipo(int idTipo)
@@ -229,8 +358,35 @@
         _tiposSelecionados.Clear();
     }
 
-    private void AbrirModalNovo()
+    private async Task AbrirModalNovo()
     {
+        if (_catalogoTipos.Count == 0)
+        {
+            bool? irTipos = await DialogService.ShowMessageBoxAsync(
+                "Nenhuma Função Cadastrada",
+                "Antes de criar um Modelo de Escala, é necessário cadastrar as funções participantes (ex: Bateria, Baixo, Voz) no catálogo.\n\nDeseja ir para a página de Funções agora?",
+                yesText: "Ir para Funções", cancelText: "Fechar");
+
+            if (irTipos == true)
+                Navigation.NavigateTo("tipos-integrante");
+
+            return;
+        }
+
+        if (_todosIntegrantes.Count == 0)
+        {
+            bool? irIntegrantes = await DialogService.ShowMessageBoxAsync(
+                "Nenhum Integrante Cadastrado",
+                "Você ainda não cadastrou nenhum integrante no sistema. O modelo de escala pode ser criado agora, mas para gerar escalas completas você precisará de voluntários vinculados.\n\nDeseja cadastrar integrantes primeiro?",
+                yesText: "Ir para Integrantes", cancelText: "Continuar Criando Modelo");
+
+            if (irIntegrantes == true)
+            {
+                Navigation.NavigateTo("integrantes");
+                return;
+            }
+        }
+
         _editandoId = null;
         _nome = "";
         _dataInicio = DateTime.Today;
@@ -262,9 +418,15 @@
             return;
         }
 
+        if (!PossuiOcorrenciasNoPeriodo())
+        {
+            Snackbar.Add("O período selecionado não contempla nenhum dos dias recorrentes marcados.", Severity.Warning);
+            return;
+        }
+
         var request = new ConfiguracaoEscalaRequest
         {
-            Nome = _nome,
+            Nome = _nome.Trim(),
             DataInicio = _dataInicio.Value,
             DataFim = _dataFim.Value,
             ValoresRecorrentes = _diasSelecionados.ToList(),
@@ -283,13 +445,35 @@
 
         if (sucesso)
         {
-            Snackbar.Add("Configuração salva com sucesso!", Severity.Success);
+            Snackbar.Add("Modelo de escala salvo com sucesso!", Severity.Success);
             _dialogVisible = false;
             await CarregarConfiguracoes();
         }
         else
         {
-            Snackbar.Add("Erro ao salvar configuração. Verifique as datas e permissões.", Severity.Error);
+            Snackbar.Add("Erro ao salvar modelo. Verifique as informações e permissões.", Severity.Error);
+        }
+    }
+
+    private async Task ConfirmarExclusao(ConfiguracaoEscalaModel config)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Excluir Modelo de Escala",
+            $"Tem certeza que deseja excluir o modelo \"{config.Nome}\"? Esta ação não poderá ser desfeita.",
+            yesText: "Excluir", cancelText: "Cancelar");
+
+        if (result == true)
+        {
+            var (sucesso, mensagemErro) = await ConfigService.ExcluirAsync(config.IdConfiguracao);
+            if (sucesso)
+            {
+                Snackbar.Add("Modelo de escala excluído com sucesso!", Severity.Success);
+                await CarregarConfiguracoes();
+            }
+            else
+            {
+                Snackbar.Add(mensagemErro ?? "Não foi possível excluir o modelo. Ele pode conter escalas geradas.", Severity.Warning);
+            }
         }
     }
 }
