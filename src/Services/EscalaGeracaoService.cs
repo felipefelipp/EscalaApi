@@ -63,7 +63,8 @@ public class EscalaGeracaoService : IEscalaGeracaoService
             Integrantes = integrantes,
             Historico = historico,
             CodigoEstrategia = "contextual_dia_semana",
-            ImpedirMultiplosTiposMesmoDia = request.ImpedirMultiplosTiposMesmoDia
+            ImpedirMultiplosTiposMesmoDia = request.ImpedirMultiplosTiposMesmoDia,
+            EvitarConsecutivosMesmaFuncao = request.EvitarConsecutivosMesmaFuncao
         };
 
         var resultado = await _geradorDePreview.GerarAsync(parametros);

@@ -9,4 +9,6 @@ public interface IEscalaRepository
     Task<EscalaDto> ObterEscalaPorId(int idEscala);
     Task InserirEscala(List<EscalaDto> escalaDto);
     Task<bool> AtualizarEscala(int idEscala, EscalaDto escalaDto);
+    Task<bool> ExcluirEscala(int idEscala);
+    Task<int> ExcluirEscalasEmLote(List<int> idsEscalas);
 }

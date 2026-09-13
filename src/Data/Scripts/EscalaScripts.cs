@@ -29,6 +29,9 @@ public class EscalaScripts
                                         SET id_integrante = @IdIntegrante,
                                             dt_data_escala = @Data,
                                             cd_tipo_escala = @TipoEscala
-                                        WHERE id_escala = @IdEscala
-                                        SELECT @@ROWCOUNT AS LinhasAfetadas;";
+                                        WHERE id_escala = @IdEscala;";
+
+    public const string ExcluirEscala = @"DELETE FROM escalas WHERE id_escala = @IdEscala;";
+
+    public const string ExcluirEscalasEmLote = @"DELETE FROM escalas WHERE id_escala IN @Ids;";
 }

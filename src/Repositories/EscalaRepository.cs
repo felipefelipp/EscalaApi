@@ -121,4 +121,44 @@ public class EscalaRepository : IEscalaRepository
             throw new Exception($"Erro ao atualizar escala: {ex.Message}", ex);
         }
     }
+
+    public async Task<bool> ExcluirEscala(int idEscala)
+    {
+        using var connection = DatabaseContext.GetConnection();
+
+        try
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@IdEscala", idEscala, DbType.Int32);
+
+            const string query = EscalaScripts.ExcluirEscala;
+            int linhasAfetadas = await connection.ExecuteAsync(query, parameters);
+
+            return linhasAfetadas > 0;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Erro ao excluir escala: {ex.Message}", ex);
+        }
+    }
+
+    public async Task<int> ExcluirEscalasEmLote(List<int> idsEscalas)
+    {
+        if (idsEscalas == null || idsEscalas.Count == 0)
+            return 0;
+
+        using var connection = DatabaseContext.GetConnection();
+
+        try
+        {
+            const string query = EscalaScripts.ExcluirEscalasEmLote;
+            int linhasAfetadas = await connection.ExecuteAsync(query, new { Ids = idsEscalas });
+
+            return linhasAfetadas;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Erro ao excluir escalas em lote: {ex.Message}", ex);
+        }
+    }
 }

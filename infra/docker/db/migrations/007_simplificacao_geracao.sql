@@ -2,6 +2,11 @@
 USE EscalaDb;
 GO
 
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
+
 IF NOT EXISTS (SELECT 1 FROM schema_migrations WHERE nome_arquivo = '007_simplificacao_geracao.sql')
 BEGIN
     -- 1. Remove tabela escala_preview e coluna id_preview_origem de escalas
@@ -25,6 +30,23 @@ BEGIN
     BEGIN
         ALTER TABLE configuracao_escala DROP CONSTRAINT FK_config_granularidade;
     END
+
+    -- Remover default constraints antes de remover as colunas
+    DECLARE @def_granularidade NVARCHAR(200);
+    SELECT @def_granularidade = d.name
+    FROM sys.default_constraints d
+    JOIN sys.columns c ON d.parent_object_id = c.object_id AND d.parent_column_id = c.column_id
+    WHERE d.parent_object_id = OBJECT_ID('configuracao_escala') AND c.name = 'id_tipo_granularidade';
+    IF @def_granularidade IS NOT NULL
+        EXEC('ALTER TABLE configuracao_escala DROP CONSTRAINT ' + @def_granularidade);
+
+    DECLARE @def_imutavel NVARCHAR(200);
+    SELECT @def_imutavel = d.name
+    FROM sys.default_constraints d
+    JOIN sys.columns c ON d.parent_object_id = c.object_id AND d.parent_column_id = c.column_id
+    WHERE d.parent_object_id = OBJECT_ID('configuracao_escala') AND c.name = 'fl_estrategia_imutavel';
+    IF @def_imutavel IS NOT NULL
+        EXEC('ALTER TABLE configuracao_escala DROP CONSTRAINT ' + @def_imutavel);
 
     IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('configuracao_escala') AND name = 'id_estrategia_algoritmo')
     BEGIN

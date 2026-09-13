@@ -39,6 +39,7 @@ public class GerarEscalaRequest
 {
     public int ConfiguracaoEscalaId { get; set; }
     public bool ImpedirMultiplosTiposMesmoDia { get; set; } = true;
+    public bool EvitarConsecutivosMesmaFuncao { get; set; } = true;
     public bool Persistir { get; set; } = false;
 }
 
@@ -78,4 +79,17 @@ public class EscalaWarningModel
     public DateTime Data { get; set; }
     public int TipoIntegranteId { get; set; }
     public string Mensagem { get; set; } = string.Empty;
+}
+
+public class EditarEscalaModel
+{
+    public int IdEscala { get; set; }
+    public DateTime? Data { get; set; }
+    public int IdIntegrante { get; set; }
+    public int TipoEscala { get; set; }
+}
+
+public class ExcluirEscalasRequest
+{
+    public List<int> Ids { get; set; } = [];
 }

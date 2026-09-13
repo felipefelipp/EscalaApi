@@ -13,13 +13,35 @@ public sealed class SeletorDeIntegrante
         IEnumerable<Integrante> integrantes,
         LoteDeEscalas lote,
         IEnumerable<Escala> historico,
-        bool impedirMultiplosTiposMesmoDia)
+        bool impedirMultiplosTiposMesmoDia,
+        bool evitarConsecutivosMesmaFuncao = false)
     {
-        return integrantes
+        var candidatos = integrantes
             .Where(i => i.TipoIntegrante.Contains(tipoId))
             .Where(i => i.DiasDaSemanaDisponiveis.Contains(data.DayOfWeek))
             .Where(i => !impedirMultiplosTiposMesmoDia || !JaAtribuidoOutroTipoMesmoDia(i, data, tipoId, historico, lote))
             .ToList();
+
+        if (evitarConsecutivosMesmaFuncao && candidatos.Count > 1)
+        {
+            var todasEscalas = lote.TodasAsEscalas(historico);
+            var ultimaEscala = todasEscalas
+                .Where(e => e.TipoEscala == tipoId && e.Data.Date < data.Date)
+                .OrderByDescending(e => e.Data)
+                .FirstOrDefault();
+
+            if (ultimaEscala != null)
+            {
+                var alternativos = candidatos
+                    .Where(c => c.IdIntegrante != ultimaEscala.Integrante.IdIntegrante)
+                    .ToList();
+
+                if (alternativos.Count > 0)
+                    return alternativos;
+            }
+        }
+
+        return candidatos;
     }
 
     public Integrante? EscolherPorMenorCarga(
