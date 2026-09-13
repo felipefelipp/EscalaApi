@@ -39,7 +39,7 @@ public class GerarEscalaRequest
 {
     public int ConfiguracaoEscalaId { get; set; }
     public bool ImpedirMultiplosTiposMesmoDia { get; set; } = true;
-    public bool EvitarConsecutivosMesmaFuncao { get; set; } = true;
+    public bool DesempateAleatorio { get; set; } = true;
     public bool Persistir { get; set; } = false;
 }
 
@@ -71,6 +71,8 @@ public class ContagemIntegranteModel
 {
     public int IntegranteId { get; set; }
     public string Nome { get; set; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonPropertyName("total")]
     public int TotalEscalado { get; set; }
 }
 

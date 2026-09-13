@@ -30,7 +30,8 @@ public abstract class CenarioJoaoMariaBase
         Integrantes = [Joao, Maria],
         Historico = [],
         CodigoEstrategia = codigoEstrategia,
-        ImpedirMultiplosTiposMesmoDia = true
+        ImpedirMultiplosTiposMesmoDia = true,
+        EvitarConsecutivosMesmaFuncao = false
     };
 
     protected static GeradorDePreview CriarGerador()

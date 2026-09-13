@@ -5,6 +5,7 @@
 @inject IntegranteApiService IntegranteService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IJSRuntime JS
 
 <div class="d-flex flex-wrap justify-space-between align-center gap-2 mb-4">
     <div>
@@ -66,6 +67,10 @@
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Escalas Persistidas (@_escalas.Count slots)</MudText>
                 <MudSpacer />
+                <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.FileDownload"
+                           OnClick="@ExportarEscalasSalvasExcel" Size="Size.Small" Class="mr-2" Disabled="@(_escalas.Count == 0)">
+                    Exportar Excel
+                </MudButton>
                 @if (_escalasSelecionadas.Count > 0)
                 {
                     <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteSweep"
@@ -191,21 +196,12 @@
                     </MudPaper>
                 </MudItem>
             }
-            <MudItem xs="12" sm="6">
+            <MudItem xs="12">
                 <MudPaper Class="pa-2 d-flex flex-column h-100" Outlined="true" Elevation="0">
                     <MudSwitch @bind-Value="_impedirMultiplos" Label="Evitar duplicidade no mesmo dia" Color="Color.Primary" />
                     <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
-                        <b>Ativado:</b> O voluntário atua em no máximo 1 função por culto/data. Se houver carência, aceita vaga aberta.<br/>
+                        <b>Ativado:</b> O voluntário atua em no máximo 1 função por evento/data. Se houver carência, aceita vaga aberta.<br/>
                         <b>Desativado:</b> Permite cobrir mais de uma função se faltar voluntário.
-                    </MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudPaper Class="pa-2 d-flex flex-column h-100" Outlined="true" Elevation="0">
-                    <MudSwitch @bind-Value="_evitarConsecutivos" Label="Alternar função em cultos consecutivos" Color="Color.Secondary" />
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
-                        <b>Ativado:</b> Quem exerceu a função (ex.: Ministro) no culto anterior não repete no próximo, alternando com os outros.<br/>
-                        <b>Desativado:</b> Permite repetir a função consecutivamente se tiver menor carga.
                     </MudText>
                 </MudPaper>
             </MudItem>
@@ -267,7 +263,7 @@
                     {
                         <div class="mb-3">
                             <MudText Typo="Typo.subtitle2" Color="Color.Primary">
-                                @(bal.TipoIntegranteNome ?? $"Função #{bal.TipoIntegranteId}") - @bal.DiaSemana (Desvio: @bal.DesvioMaximo)
+                                @(string.IsNullOrWhiteSpace(bal.TipoIntegranteNome) ? ObterNomeTipo(bal.TipoIntegranteId) : bal.TipoIntegranteNome) - @bal.DiaSemana (Desvio: @bal.DesvioMaximo)
                             </MudText>
                             <div class="d-flex flex-wrap gap-2 mt-1">
                                 @foreach (var c in bal.Contagens)
@@ -285,8 +281,12 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(() => _gerarDialogVisible = false)">Fechar</MudButton>
-        @if (_previewCarregado != null)
+        @if (_previewCarregado != null && _previewCarregado.Escalas.Count > 0)
         {
+            <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.FileDownload"
+                       OnClick="@ExportarPreviewExcel">
+                Exportar Excel
+            </MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.CheckCircle"
                        OnClick="@ConfirmarEPersistir" Disabled="@_salvandoEscala">
                 @(_salvandoEscala ? "Persistindo..." : "Aprovar e Salvar Escala")
@@ -439,7 +439,6 @@
     private bool _gerarDialogVisible = false;
     private int _configSelecionadaId = 0;
     private bool _impedirMultiplos = true;
-    private bool _evitarConsecutivos = true;
     private bool _gerandoPreview = false;
     private bool _salvandoEscala = false;
     private ResultadoPreviewModel? _previewCarregado;
@@ -609,7 +608,6 @@
         {
             ConfiguracaoEscalaId = _configSelecionadaId,
             ImpedirMultiplosTiposMesmoDia = _impedirMultiplos,
-            EvitarConsecutivosMesmaFuncao = _evitarConsecutivos,
             Persistir = false
         };
 
@@ -636,7 +634,6 @@
         {
             ConfiguracaoEscalaId = _configSelecionadaId,
             ImpedirMultiplosTiposMesmoDia = _impedirMultiplos,
-            EvitarConsecutivosMesmaFuncao = _evitarConsecutivos,
             Persistir = true
         };
 
@@ -679,5 +676,44 @@
         {
             Snackbar.Add("Erro ao importar CSV. Verifique o formato do arquivo e colunas.", Severity.Error);
         }
+    }
+
+    private async Task ExportarPreviewExcel()
+    {
+        if (_previewCarregado == null || _previewCarregado.Escalas.Count == 0)
+            return;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Data;Dia da Semana;Função;Integrante");
+        foreach (var item in _previewCarregado.Escalas)
+        {
+            var nomeTipo = ObterNomeTipo(item.TipoEscala);
+            var nomeIntegrante = item.Integrante?.Nome ?? "";
+            sb.AppendLine($"{item.Data:dd/MM/yyyy};{item.DiaDaSemana};\"{nomeTipo}\";\"{nomeIntegrante}\"");
+        }
+
+        var csvContent = "\uFEFF" + sb.ToString();
+        var fileName = $"preview_escala_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        await JS.InvokeVoidAsync("downloadFileFromText", fileName, csvContent, "text/csv;charset=utf-8");
+        Snackbar.Add("Arquivo Excel exportado com sucesso!", Severity.Success);
+    }
+
+    private async Task ExportarEscalasSalvasExcel()
+    {
+        if (_escalas.Count == 0)
+            return;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Data;Dia da Semana;Função;Integrante");
+        foreach (var item in _escalas)
+        {
+            var dataStr = item.Data?.ToString("dd/MM/yyyy") ?? "";
+            sb.AppendLine($"{dataStr};{item.Dia};\"{item.DescricaoTipoEscala}\";\"{item.NomeIntegrante}\"");
+        }
+
+        var csvContent = "\uFEFF" + sb.ToString();
+        var fileName = $"escalas_persistidas_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        await JS.InvokeVoidAsync("downloadFileFromText", fileName, csvContent, "text/csv;charset=utf-8");
+        Snackbar.Add("Arquivo Excel exportado com sucesso!", Severity.Success);
     }
 }

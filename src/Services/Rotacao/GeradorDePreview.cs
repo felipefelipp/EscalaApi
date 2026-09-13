@@ -17,7 +17,8 @@ public sealed class ParametrosGeracaoPreview
     public IEnumerable<Escala> Historico { get; init; } = [];
     public string CodigoEstrategia { get; init; } = "contextual_dia_semana";
     public bool ImpedirMultiplosTiposMesmoDia { get; init; } = true;
-    public bool EvitarConsecutivosMesmaFuncao { get; init; } = false;
+    public bool EvitarConsecutivosMesmaFuncao { get; init; } = true;
+    public bool DesempateAleatorio { get; init; } = false;
 }
 
 /// <summary>
@@ -88,7 +89,7 @@ public sealed class GeradorDePreview
             parametros.EvitarConsecutivosMesmaFuncao);
 
         var escolhido = _seletor.EscolherPorMenorCarga(
-            candidatos, estrategia, tipo, data, historico, lote);
+            candidatos, estrategia, tipo, data, historico, lote, parametros.DesempateAleatorio);
 
         if (escolhido is null)
         {

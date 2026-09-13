@@ -14,7 +14,7 @@ public sealed class SeletorDeIntegrante
         LoteDeEscalas lote,
         IEnumerable<Escala> historico,
         bool impedirMultiplosTiposMesmoDia,
-        bool evitarConsecutivosMesmaFuncao = false)
+        bool evitarConsecutivosMesmaFuncao = true)
     {
         var candidatos = integrantes
             .Where(i => i.TipoIntegrante.Contains(tipoId))
@@ -50,7 +50,8 @@ public sealed class SeletorDeIntegrante
         int tipoId,
         DateTime data,
         IEnumerable<Escala> historico,
-        LoteDeEscalas lote)
+        LoteDeEscalas lote,
+        bool desempateAleatorio = false)
     {
         var pool = candidatos.ToList();
         if (pool.Count == 0)
@@ -68,7 +69,7 @@ public sealed class SeletorDeIntegrante
             .Select(x => x.Integrante)
             .ToList();
 
-        return Desempatar(empatados, estrategia, tipoId, data, historico, lote);
+        return Desempatar(empatados, estrategia, tipoId, data, historico, lote, desempateAleatorio);
     }
 
     private static Integrante Desempatar(
@@ -77,15 +78,31 @@ public sealed class SeletorDeIntegrante
         int tipoId,
         DateTime data,
         IEnumerable<Escala> historico,
-        LoteDeEscalas lote)
+        LoteDeEscalas lote,
+        bool desempateAleatorio)
     {
+        if (empatados.Count <= 1)
+            return empatados.First();
+
         var contexto = estrategia.ObterContexto(tipoId, data);
         var todasEscalas = lote.TodasAsEscalas(historico).ToList();
 
-        return empatados
-            .OrderBy(i => ObterDataUltimaEscalaNoContexto(i, contexto, todasEscalas))
-            .ThenBy(i => i.IdIntegrante)
-            .First();
+        // 1. Prioriza quem tem a data da última escala mais antiga (ou nunca escalado)
+        var comDataMaisAntiga = empatados
+            .GroupBy(i => ObterDataUltimaEscalaNoContexto(i, contexto, todasEscalas))
+            .OrderBy(g => g.Key)
+            .First()
+            .ToList();
+
+        if (comDataMaisAntiga.Count == 1)
+            return comDataMaisAntiga[0];
+
+        // 2. Se desempateAleatorio estiver habilitado (modo dinâmico/web), sorteia entre os empatados
+        if (desempateAleatorio)
+            return comDataMaisAntiga[Random.Shared.Next(comDataMaisAntiga.Count)];
+
+        // 3. Fallback determinístico (PRD §10.6): menor id_integrante para testes unitários
+        return comDataMaisAntiga.OrderBy(i => i.IdIntegrante).First();
     }
 
     private static DateTime ObterDataUltimaEscalaNoContexto(

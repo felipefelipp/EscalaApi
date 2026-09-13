@@ -118,8 +118,8 @@ public class EscalaManager : IEscalaManagerService
                     poolCandidatos = semConflito;
                 }
 
-                // 5. Alternância de Função Consecutiva (Item 2 - Parametrizável via EvitarConsecutivosMesmaFuncao)
-                if (escala.EvitarConsecutivosMesmaFuncao && poolCandidatos.Count > 1)
+                // 5. Alternância de Função Consecutiva (Regra padrão obrigatória)
+                if (poolCandidatos.Count > 1)
                 {
                     // Obtém quem exerceu esta mesma função imediatamente anterior
                     var ultimaEscalaDoTipo = todasAsEscalas

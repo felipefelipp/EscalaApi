@@ -161,8 +161,7 @@ public class EscalaManagerCriarEscalaTests
             TipoEscala: [1],
             DiasDaSemana: [DayOfWeek.Wednesday, DayOfWeek.Sunday],
             Persistir: false,
-            ImpedirMultiplosTiposMesmoDia: true,
-            EvitarConsecutivosMesmaFuncao: true);
+            ImpedirMultiplosTiposMesmoDia: true);
 
         var resultado = await service.CriarEscala(request);
 
@@ -172,7 +171,7 @@ public class EscalaManagerCriarEscalaTests
         var ministroQuarta = resultado.Object.First(e => e.Data.Date == quarta).Integrante.IdIntegrante;
         var ministroDomingo = resultado.Object.First(e => e.Data.Date == domingo).Integrante.IdIntegrante;
 
-        // Com EvitarConsecutivosMesmaFuncao = true, quem ministrou na quarta NÃO pode ministrar no domingo se o outro está disponível
+        // Com a alternância consecutiva ativa por padrão, quem ministrou na quarta NÃO pode ministrar no domingo se o outro está disponível
         Assert.NotEqual(ministroQuarta, ministroDomingo);
     }
 }
